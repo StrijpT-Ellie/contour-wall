@@ -1,5 +1,6 @@
 import sys
 import time
+import math
 
 import cv2 as cv
 import mediapipe as mp
@@ -8,9 +9,27 @@ WIDTH = 1280
 HEIGHT = 960
 
 
+def drawLine(landmarkA, landmarkB, frame, hex, wideBoyFactor):
+    cv.line(
+        frame,
+        (int(landmarkA.x * WIDTH), int(landmarkA.y * HEIGHT)),
+        (int(landmarkB.x * WIDTH), int(landmarkB.y * HEIGHT)),
+        (tuple(int(hex[i : i + 2], 16) for i in (0, 2, 4))),
+        int(
+            math.ceil(
+                math.sqrt(
+                    (landmarkA.x * WIDTH - landmarkB.x * WIDTH) ** 2
+                    + (landmarkA.y * HEIGHT - landmarkB.y * HEIGHT) ** 2
+                )
+                / wideBoyFactor
+            )
+        ),
+    )
+
+
 def estimate_pose(cam_or_vid: str):
-    mp_drawing = mp.solutions.drawing_utils
-    mp_drawing_styles = mp.solutions.drawing_styles
+    # mp_drawing = mp.solutions.drawing_utils
+    # mp_drawing_styles = mp.solutions.drawing_styles
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose()
 
@@ -45,8 +64,19 @@ def estimate_pose(cam_or_vid: str):
         #     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
         # )
 
-        landmark11 = results.pose_landmarks.landmark[11]
-        landmark13 = results.pose_landmarks.landmark[13]
+        leftShoulder = results.pose_landmarks.landmark[11]
+        leftElbow = results.pose_landmarks.landmark[13]
+        leftWrist = results.pose_landmarks.landmark[15]
+        leftHip = results.pose_landmarks.landmark[23]
+        leftKnee = results.pose_landmarks.landmark[25]
+        leftAnkle = results.pose_landmarks.landmark[27]
+
+        rightShoulder = results.pose_landmarks.landmark[12]
+        rightElbow = results.pose_landmarks.landmark[14]
+        rightWrist = results.pose_landmarks.landmark[16]
+        rightHip = results.pose_landmarks.landmark[24]
+        rightKnee = results.pose_landmarks.landmark[26]
+        rightAnkle = results.pose_landmarks.landmark[28]
 
         for id, lm in enumerate(results.pose_landmarks.landmark):
             cx, cy = int(lm.x * WIDTH), int(lm.y * HEIGHT)
@@ -62,18 +92,41 @@ def estimate_pose(cam_or_vid: str):
             frame, str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3
         )
 
-        cv.line(
-            frame,
-            (int(landmark11.x * WIDTH), int(landmark11.y * HEIGHT)),
-            (int(landmark13.x * WIDTH), int(landmark13.y * HEIGHT)),
-            (255, 255, 0),
-            int(100 - 20 * (landmark11.z)),
-        )
+        # shoulders
+        drawLine(leftShoulder, rightShoulder, frame, "006666", 7)
 
-        print(
-            (int(landmark11.x * WIDTH), int(landmark11.y * HEIGHT)),
-            (int(landmark13.x * WIDTH), int(landmark13.y * HEIGHT)),
-        )
+        # hips
+        drawLine(leftHip, rightHip, frame, "FF3333", 7)
+
+        # left shoulder > left elbow
+        drawLine(leftShoulder, leftElbow, frame, "CC00CC", 3.8)
+
+        # left elbow > left wrist
+        drawLine(leftElbow, leftWrist, frame, "FF33FF", 5)
+
+        # left shoulder > left hip
+        drawLine(leftShoulder, leftHip, frame, "CC0000", 7)
+
+        # left hip > left knee
+        drawLine(leftHip, leftKnee, frame, "0000CC", 2.5)
+
+        # left knee > left ankle
+        drawLine(leftKnee, leftAnkle, frame, "6666FF", 3.5)
+
+        # right shoulder > right elbow
+        drawLine(rightShoulder, rightElbow, frame, "4D9900", 3.8)
+
+        # right elbow > right wrist
+        drawLine(rightElbow, rightWrist, frame, "80FF00", 5)
+
+        # right shoulder > right hip
+        drawLine(rightShoulder, rightHip, frame, "00CCCC", 7)
+
+        # right hip > right knee
+        drawLine(rightHip, rightKnee, frame, "CCCC00", 2.5)
+
+        # right knee > right ankle
+        drawLine(rightKnee, rightAnkle, frame, "FFFF33", 3.5)
 
         cv.imshow("MediaPipe Pose", frame)
 
