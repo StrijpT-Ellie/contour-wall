@@ -108,7 +108,7 @@ def estimate_pose(cam_or_vid: str):
         drawLine(leftShoulder, leftHip, frame, "CC0000", 7)
 
         # left hip > left knee
-        drawLine(leftHip, leftKnee, frame, "0000CC", 2.5)
+        drawLine(leftHip, leftKnee, frame, "0000CC", 3)
 
         # left knee > left ankle
         drawLine(leftKnee, leftAnkle, frame, "6666FF", 3.5)
@@ -123,7 +123,7 @@ def estimate_pose(cam_or_vid: str):
         drawLine(rightShoulder, rightHip, frame, "00CCCC", 7)
 
         # right hip > right knee
-        drawLine(rightHip, rightKnee, frame, "CCCC00", 2.5)
+        drawLine(rightHip, rightKnee, frame, "CCCC00", 3)
 
         # right knee > right ankle
         drawLine(rightKnee, rightAnkle, frame, "FFFF33", 3.5)
