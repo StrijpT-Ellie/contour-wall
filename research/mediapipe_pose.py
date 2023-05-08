@@ -18,19 +18,21 @@ def estimate_pose(cam_or_vid: str):
 
     while True:
         # Get frame from vid or webcam
-        _, image = cap.read()
+        _, frame = cap.read()
+
+        frame = cv.resize(frame, (400, 300))
 
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
-        image.flags.writeable = True
-        image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-        results = pose.process(image)
+        frame.flags.writeable = False
+        frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+        results = pose.process(frame)
 
         # Draw the pose annotation on the image.
-        image.flags.writeable = True
-        image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+        frame.flags.writeable = True
+        frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
         mp_drawing.draw_landmarks(
-            image,
+            frame,
             results.pose_landmarks,
             mp_pose.POSE_CONNECTIONS,
             landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
@@ -41,8 +43,8 @@ def estimate_pose(cam_or_vid: str):
         fps = 1 / (cTime - previous_frame_time)
         previous_frame_time = cTime
 
-        cv.putText(image, str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
-        cv.imshow("MediaPipe Pose", image)
+        cv.putText(frame, str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3)
+        cv.imshow("MediaPipe Pose", frame)
 
         # Quit if 'q' is pressed
         if cv.waitKey(1) & 0xFF == ord("q"):
