@@ -4,28 +4,30 @@ import math
 
 import cv2 as cv
 import mediapipe as mp
+import numpy as np
 
 WIDTH = 1280
 HEIGHT = 960
 
+def pythagoras_normalized(landmarkA, landmarkB):
+    return math.sqrt(
+        (landmarkA.x - landmarkB.x) ** 2
+        + (landmarkA.y - landmarkB.y) ** 2
+    )
 
 def drawLine(landmarkA, landmarkB, frame, hex, wideBoyFactor):
     cv.line(
         frame,
-        (int(landmarkA.x * WIDTH), int(landmarkA.y * HEIGHT)),
-        (int(landmarkB.x * WIDTH), int(landmarkB.y * HEIGHT)),
+        (int(landmarkA.x), int(landmarkA.y)),
+        (int(landmarkB.x), int(landmarkB.y)),
         (tuple(int(hex[i : i + 2], 16) for i in (0, 2, 4))),
         int(
             math.ceil(
-                math.sqrt(
-                    (landmarkA.x * WIDTH - landmarkB.x * WIDTH) ** 2
-                    + (landmarkA.y * HEIGHT - landmarkB.y * HEIGHT) ** 2
-                )
+                pythagoras_normalized(landmarkA, landmarkB)
                 / wideBoyFactor
             )
         ),
     )
-
 
 def estimate_pose(cam_or_vid: str):
     # mp_drawing = mp.solutions.drawing_utils
@@ -35,9 +37,7 @@ def estimate_pose(cam_or_vid: str):
 
     previous_frame_time = 0
 
-    cap = (
-        cv.VideoCapture(0) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
-    )
+    cap = cv.VideoCapture(0) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
     # model_complexity improves performance, but only 2 is actually much slower
     pose = mp_pose.Pose(
         min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=0
@@ -64,6 +64,13 @@ def estimate_pose(cam_or_vid: str):
         #     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
         # )
 
+        for landmark in results.pose_landmarks.landmark:
+            landmark.x, landmark.y = landmark.x * WIDTH, landmark.y * HEIGHT
+
+        nose = results.pose_landmarks.landmark[0]
+
+        leftEyeInner = results.pose_landmarks.landmark[1]
+        leftMouth = results.pose_landmarks.landmark[9]
         leftShoulder = results.pose_landmarks.landmark[11]
         leftElbow = results.pose_landmarks.landmark[13]
         leftWrist = results.pose_landmarks.landmark[15]
@@ -71,6 +78,8 @@ def estimate_pose(cam_or_vid: str):
         leftKnee = results.pose_landmarks.landmark[25]
         leftAnkle = results.pose_landmarks.landmark[27]
 
+        rightEyeInner = results.pose_landmarks.landmark[4]
+        rightMouth = results.pose_landmarks.landmark[10]
         rightShoulder = results.pose_landmarks.landmark[12]
         rightElbow = results.pose_landmarks.landmark[14]
         rightWrist = results.pose_landmarks.landmark[16]
@@ -78,55 +87,90 @@ def estimate_pose(cam_or_vid: str):
         rightKnee = results.pose_landmarks.landmark[26]
         rightAnkle = results.pose_landmarks.landmark[28]
 
-        for id, lm in enumerate(results.pose_landmarks.landmark):
-            cx, cy = int(lm.x * WIDTH), int(lm.y * HEIGHT)
-            # print(id, cx, cy)
-            cv.circle(frame, (cx, cy), 10, (255, 143, 0), cv.FILLED)
+        chestPts = np.array(
+            [
+                [rightShoulder.x, rightShoulder.y],
+                [leftShoulder.x, leftShoulder.y],
+                [leftHip.x, leftHip.y],
+                [rightHip.x, rightHip.y],
+            ],
+            np.int32,
+        )
+
+        chestPts = chestPts.reshape((-1, 1, 2))
+
+        neckPts = np.array(
+            [
+                [rightShoulder.x, rightShoulder.y],
+                [leftShoulder.x, leftShoulder.y],
+                [leftMouth.x, leftMouth.y],
+                [rightMouth.x, rightMouth.y],
+            ],
+            np.int32,
+        )
+
+        neckPts = neckPts.reshape((-1, 1, 2))
 
         # Calculate the FPS of the output video
         cTime = time.time()
         fps = 1 / (cTime - previous_frame_time)
         previous_frame_time = cTime
 
+        cv.fillPoly(frame, [chestPts], color=(255, 255, 255))
+        cv.fillPoly(frame, [neckPts], color=(255, 255, 255))
+
+        cv.ellipse(
+            frame,
+            (int((rightEyeInner.x + leftEyeInner.x)/2),
+               int((rightEyeInner.y + leftEyeInner.y)/2)),
+              (int(pythagoras_normalized(rightShoulder, leftShoulder)*0.3),
+               int(pythagoras_normalized(rightShoulder, leftShoulder)*0.45)),
+               0,
+               0,
+               360,
+               (255, 255, 255),
+               -1
+            )
+
         cv.putText(
             frame, str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3
         )
 
         # shoulders
-        drawLine(leftShoulder, rightShoulder, frame, "006666", 7)
+        drawLine(leftShoulder, rightShoulder, frame, "FFFFFF", 7)
 
         # hips
-        drawLine(leftHip, rightHip, frame, "FF3333", 7)
+        drawLine(leftHip, rightHip, frame, "FFFFFF", 7)
+
+        # left mouth > left shoulder
+        drawLine(leftMouth, leftShoulder, frame, "FFFFFF", 8 )
 
         # left shoulder > left elbow
-        drawLine(leftShoulder, leftElbow, frame, "CC00CC", 3.8)
+        drawLine(leftShoulder, leftElbow, frame, "FFFFFF", 3.8)
 
         # left elbow > left wrist
-        drawLine(leftElbow, leftWrist, frame, "FF33FF", 5)
-
-        # left shoulder > left hip
-        drawLine(leftShoulder, leftHip, frame, "CC0000", 7)
+        drawLine(leftElbow, leftWrist, frame, "FFFFFF", 5)
 
         # left hip > left knee
-        drawLine(leftHip, leftKnee, frame, "0000CC", 3)
+        drawLine(leftHip, leftKnee, frame, "FFFFFF", 3)
 
         # left knee > left ankle
-        drawLine(leftKnee, leftAnkle, frame, "6666FF", 3.5)
+        drawLine(leftKnee, leftAnkle, frame, "FFFFFF", 3.5)
 
         # right shoulder > right elbow
-        drawLine(rightShoulder, rightElbow, frame, "4D9900", 3.8)
+        drawLine(rightShoulder, rightElbow, frame, "FFFFFF", 3.8)
 
         # right elbow > right wrist
-        drawLine(rightElbow, rightWrist, frame, "80FF00", 5)
+        drawLine(rightElbow, rightWrist, frame, "FFFFFF", 5)
 
         # right shoulder > right hip
-        drawLine(rightShoulder, rightHip, frame, "00CCCC", 7)
+        drawLine(rightShoulder, rightHip, frame, "FFFFFF", 7)
 
         # right hip > right knee
-        drawLine(rightHip, rightKnee, frame, "CCCC00", 3)
+        drawLine(rightHip, rightKnee, frame, "FFFFFF", 3)
 
         # right knee > right ankle
-        drawLine(rightKnee, rightAnkle, frame, "FFFF33", 3.5)
+        drawLine(rightKnee, rightAnkle, frame, "FFFFFF", 3.5)
 
         cv.imshow("MediaPipe Pose", frame)
 
