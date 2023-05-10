@@ -3,11 +3,14 @@ import time
 import math
 
 import cv2 as cv
+import cvzone as cvz
 import mediapipe as mp
 import numpy as np
 
 WIDTH = 1280
 HEIGHT = 960
+
+
 
 def pythagoras_normalized(landmarkA, landmarkB):
     return math.sqrt(
@@ -15,7 +18,7 @@ def pythagoras_normalized(landmarkA, landmarkB):
         + (landmarkA.y - landmarkB.y) ** 2
     )
 
-def drawLine(landmarkA, landmarkB, frame, hex, wideBoyFactor):
+def drawLine(landmarkA, landmarkB, frame, wideBoyFactor, hex="FFFFFF"):
     cv.line(
         frame,
         (int(landmarkA.x), int(landmarkA.y)),
@@ -30,15 +33,13 @@ def drawLine(landmarkA, landmarkB, frame, hex, wideBoyFactor):
     )
 
 def estimate_pose(cam_or_vid: str):
-    # mp_drawing = mp.solutions.drawing_utils
-    # mp_drawing_styles = mp.solutions.drawing_styles
+    blackBg = np.zeros((HEIGHT, WIDTH, 3), dtype = np.uint8)
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose()
 
     previous_frame_time = 0
 
     cap = cv.VideoCapture(0) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
-    # model_complexity improves performance, but only 2 is actually much slower
     pose = mp_pose.Pose(
         min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=0
     )
@@ -49,6 +50,8 @@ def estimate_pose(cam_or_vid: str):
 
         frame = cv.resize(frame, (WIDTH, HEIGHT))
 
+        cv.rectangle(blackBg, (0, 0), (WIDTH-1, HEIGHT-1), (0, 0, 0), -1)
+
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
         frame.flags.writeable = False
@@ -58,16 +61,9 @@ def estimate_pose(cam_or_vid: str):
         # Draw the pose annotation on the image.
         frame.flags.writeable = True
         frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
-        # mp_drawing.draw_landmarks(
-        #     frame,
-        #     results.pose_landmarks,
-        #     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style(),
-        # )
 
         for landmark in results.pose_landmarks.landmark:
             landmark.x, landmark.y = landmark.x * WIDTH, landmark.y * HEIGHT
-
-        nose = results.pose_landmarks.landmark[0]
 
         leftEyeInner = results.pose_landmarks.landmark[1]
         leftMouth = results.pose_landmarks.landmark[9]
@@ -116,11 +112,17 @@ def estimate_pose(cam_or_vid: str):
         fps = 1 / (cTime - previous_frame_time)
         previous_frame_time = cTime
 
-        cv.fillPoly(frame, [chestPts], color=(255, 255, 255))
-        cv.fillPoly(frame, [neckPts], color=(255, 255, 255))
+        cv.putText(
+            blackBg, str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3
+        )
 
+        # Fill neck and chest based on landmarks
+        cv.fillPoly(blackBg, [chestPts], color=(255, 255, 255))
+        cv.fillPoly(blackBg, [neckPts], color=(255, 255, 255))
+
+        # Elipse drawing over the head based on the middle point between eyes
         cv.ellipse(
-            frame,
+            blackBg,
             (int((rightEyeInner.x + leftEyeInner.x)/2),
                int((rightEyeInner.y + leftEyeInner.y)/2)),
               (int(pythagoras_normalized(rightShoulder, leftShoulder)*0.3),
@@ -132,47 +134,44 @@ def estimate_pose(cam_or_vid: str):
                -1
             )
 
-        cv.putText(
-            frame, str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (255, 0, 0), 3
-        )
-
         # shoulders
-        drawLine(leftShoulder, rightShoulder, frame, "FFFFFF", 7)
+        drawLine(leftShoulder, rightShoulder, blackBg, 7)
 
         # hips
-        drawLine(leftHip, rightHip, frame, "FFFFFF", 7)
+        drawLine(leftHip, rightHip, blackBg, 7)
 
         # left mouth > left shoulder
-        drawLine(leftMouth, leftShoulder, frame, "FFFFFF", 8 )
+        drawLine(leftMouth, leftShoulder, blackBg, 8 )
 
         # left shoulder > left elbow
-        drawLine(leftShoulder, leftElbow, frame, "FFFFFF", 3.8)
+        drawLine(leftShoulder, leftElbow, blackBg, 3.8)
 
         # left elbow > left wrist
-        drawLine(leftElbow, leftWrist, frame, "FFFFFF", 5)
+        drawLine(leftElbow, leftWrist, blackBg, 5)
 
         # left hip > left knee
-        drawLine(leftHip, leftKnee, frame, "FFFFFF", 3)
+        drawLine(leftHip, leftKnee, blackBg, 3)
 
         # left knee > left ankle
-        drawLine(leftKnee, leftAnkle, frame, "FFFFFF", 3.5)
+        drawLine(leftKnee, leftAnkle, blackBg, 3.5)
 
         # right shoulder > right elbow
-        drawLine(rightShoulder, rightElbow, frame, "FFFFFF", 3.8)
+        drawLine(rightShoulder, rightElbow, blackBg, 3.8)
 
         # right elbow > right wrist
-        drawLine(rightElbow, rightWrist, frame, "FFFFFF", 5)
+        drawLine(rightElbow, rightWrist, blackBg, 5)
 
         # right shoulder > right hip
-        drawLine(rightShoulder, rightHip, frame, "FFFFFF", 7)
+        drawLine(rightShoulder, rightHip, blackBg, 7)
 
         # right hip > right knee
-        drawLine(rightHip, rightKnee, frame, "FFFFFF", 3)
+        drawLine(rightHip, rightKnee, blackBg, 3)
 
         # right knee > right ankle
-        drawLine(rightKnee, rightAnkle, frame, "FFFFFF", 3.5)
+        drawLine(rightKnee, rightAnkle, blackBg, 3.5)
 
-        cv.imshow("MediaPipe Pose", frame)
+        cv.imshow("Original feed", frame)
+        cv.imshow("Extrapolated pose", blackBg)
 
         # Quit if 'q' is pressed
         if cv.waitKey(1) & 0xFF == ord("q"):
@@ -180,7 +179,6 @@ def estimate_pose(cam_or_vid: str):
 
 
 if __name__ == "__main__":
-    print(sys.argv[-1])
     if len(sys.argv) < 2:
         print("Please provide either '--webcam', or a filename of a video")
         exit()

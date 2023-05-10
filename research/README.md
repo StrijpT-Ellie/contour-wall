@@ -6,4 +6,4 @@
 2. Activate enviroment: 
    - For Unix: `source .venv/bin/activate`
    - For Windows: `./.venv/Scripts/Activate.ps1`      
-3. Install requirements for all research: `pip install -r requirements.txt`
+3. Install requirements for all research: `python3 -m pip install -r requirements.txt`
