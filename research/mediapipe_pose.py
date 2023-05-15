@@ -160,23 +160,45 @@ def estimate_pose(cam_or_vid: str):
                 (255, 255, 255),
                 -1
                 )
+            
+            # Elipse drawing over hands
+            cv.ellipse(
+                blackBg,
+                (int(leftWrist.x),
+                 int(leftWrist.y)),
+                (int(pythagoras_normalized(leftWrist, leftIndex)*0.75),
+                int(pythagoras_normalized(leftWrist, leftIndex)*0.75)),
+                0,
+                0,
+                360,
+                (255, 255, 255),
+                -1
+                )
+            
+            cv.ellipse(
+                blackBg,
+                (int(rightWrist.x),
+                 int(rightWrist.y)),
+                (int(pythagoras_normalized(rightWrist, rightIndex)*0.75),
+                int(pythagoras_normalized(rightWrist, rightIndex)*0.75)),
+                0,
+                0,
+                360,
+                (255, 255, 255),
+                -1
+                )
 
             # shoulders
-            draw_line(leftShoulder, rightShoulder, blackBg, 6)
+            draw_line(leftShoulder, rightShoulder, blackBg, 7)
 
             # hips
-            draw_line(leftHip, rightHip, blackBg, 6)
+            draw_line(leftHip, rightHip, blackBg, 7)
 
             # left shoulder > left elbow
             draw_line(leftShoulder, leftElbow, blackBg, 3.8)
 
             # left elbow > left wrist
             draw_line(leftElbow, leftWrist, blackBg, 5)
-
-            # left hand
-            draw_line(leftWrist, leftPinky, blackBg, 8)
-            draw_line(leftWrist, leftIndex, blackBg, 8)
-            draw_line(leftWrist, leftThumb, blackBg, 8)
 
             # left shoulder > left hip
             draw_line(leftShoulder, leftHip, blackBg, 6.5)
@@ -192,11 +214,6 @@ def estimate_pose(cam_or_vid: str):
 
             # right elbow > right wrist
             draw_line(rightElbow, rightWrist, blackBg, 5)
-
-            # right hand
-            draw_line(rightWrist, rightPinky, blackBg, 8)
-            draw_line(rightWrist, rightIndex, blackBg, 8)
-            draw_line(rightWrist, rightThumb, blackBg, 8)
 
             # right shoulder > right hip
             draw_line(rightShoulder, rightHip, blackBg, 6.5)
@@ -217,7 +234,7 @@ def estimate_pose(cam_or_vid: str):
                 break
         
         except: 
-            print("Something went wrong... Most likely a landmark used to extrapolate pose has not been recognized. Try rerunning the program and make sure you are in the FOV of your webcamera or that the video you are trying to analyze starts with a frame where landmarks can be captured.")
+            print("Sum ting wong, wi tu low, ho lee fuk, bang ding ouw...")
             break
 
 if __name__ == "__main__":
