@@ -41,7 +41,7 @@ def estimate_pose(cam_or_vid: str):
 
     previous_frame_time = 0
 
-    cap = cv.VideoCapture(0) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
+    cap = cv.VideoCapture(0, cv.CAP_DSHOW) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
     pose = mp_pose.Pose(
         min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=0
     )
@@ -50,13 +50,16 @@ def estimate_pose(cam_or_vid: str):
         # Get frame from vid or webcam
         _, frame = cap.read()
 
+        w, h = (64, 64)
+
         # Resize captured frame to preset values
         frame = cv.resize(frame, (WIDTH, HEIGHT))
 
         # Flip image to reflect what is on the screen directly
+
         frame = cv.flip(frame, 1)
 
-        # Create a black frame to later draw extrapolated pose on
+        # Create a black frame to later draw extrapolated pose ons
         cv.rectangle(blackBg, (0, 0), (WIDTH-1, HEIGHT-1), (0, 0, 0), -1)
 
         # To improve performance, optionally mark the image as not writeable to
@@ -78,9 +81,9 @@ def estimate_pose(cam_or_vid: str):
             leftShoulder = results.pose_landmarks.landmark[11]
             leftElbow = results.pose_landmarks.landmark[13]
             leftWrist = results.pose_landmarks.landmark[15]
-            leftPinky = results.pose_landmarks.landmark[17]
+            # leftPinky = results.pose_landmarks.landmark[17]
             leftIndex = results.pose_landmarks.landmark[19]
-            leftThumb = results.pose_landmarks.landmark[21]
+            # leftThumb = results.pose_landmarks.landmark[21]
             leftHip = results.pose_landmarks.landmark[23]
             leftKnee = results.pose_landmarks.landmark[25]
             leftAnkle = results.pose_landmarks.landmark[27]
@@ -90,9 +93,9 @@ def estimate_pose(cam_or_vid: str):
             rightShoulder = results.pose_landmarks.landmark[12]
             rightElbow = results.pose_landmarks.landmark[14]
             rightWrist = results.pose_landmarks.landmark[16]
-            rightPinky = results.pose_landmarks.landmark[18]
+            # rightPinky = results.pose_landmarks.landmark[18]
             rightIndex = results.pose_landmarks.landmark[20]
-            rightThumb = results.pose_landmarks.landmark[22]
+            # rightThumb = results.pose_landmarks.landmark[22]
             rightHip = results.pose_landmarks.landmark[24]
             rightKnee = results.pose_landmarks.landmark[26]
             rightAnkle = results.pose_landmarks.landmark[28]
@@ -125,23 +128,6 @@ def estimate_pose(cam_or_vid: str):
             cTime = time.time()
             fps = 1 / (cTime - previous_frame_time)
             previous_frame_time = cTime
-
-            # Print FPS for monitoring on the pose extrapolated frame
-            cv.putText(
-                blackBg, "fps: " + str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3
-            )
-            cv.putText(
-                blackBg, "shoulders_dist: " + str(int(pythagoras_normalized(leftShoulder, rightShoulder))), (1000, 50), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-                )
-            cv.putText(
-            blackBg, "hips_dist: " + str(int(pythagoras_normalized(leftHip, rightHip))), (1000, 80), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-            )
-            cv.putText(
-                blackBg, "left_side_dist: " + str(int(pythagoras_normalized(leftShoulder, leftHip))), (1000, 110), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-                )
-            cv.putText(
-                blackBg, "right_side_dist: " + str(int(pythagoras_normalized(leftShoulder, rightHip))), (1000, 140), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-                )
 
             # Fill neck and chest based on landmarks
             cv.fillPoly(blackBg, [chestPts], color=(255, 255, 255))
@@ -224,17 +210,42 @@ def estimate_pose(cam_or_vid: str):
             # right knee > right ankle
             draw_line(rightKnee, rightAnkle, blackBg, 3.5)
 
-            cv.imshow("Original feed", frame)
-            cv.moveWindow("Original feed", 0, 0)
+            # cv.imshow("Original feed", frame)
+            # cv.moveWindow("Original feed", 0, 0)
+
+            pixelBlackBg = cv.resize(blackBg, (w, h), interpolation=cv.INTER_LINEAR)
+
+            pixelBlackBg = cv.resize(pixelBlackBg, (WIDTH, HEIGHT), interpolation=cv.INTER_NEAREST)
+
+            # Print FPS for monitoring on the pose extrapolated frame
+            cv.putText(
+                blackBg, "fps: " + str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3
+            )
+            cv.putText(
+                blackBg, "shoulders_dist: " + str(int(pythagoras_normalized(leftShoulder, rightShoulder))), (1000, 50), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
+                )
+            cv.putText(
+            blackBg, "hips_dist: " + str(int(pythagoras_normalized(leftHip, rightHip))), (1000, 80), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
+            )
+            cv.putText(
+                blackBg, "left_side_dist: " + str(int(pythagoras_normalized(leftShoulder, leftHip))), (1000, 110), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
+                )
+            cv.putText(
+                blackBg, "right_side_dist: " + str(int(pythagoras_normalized(leftShoulder, rightHip))), (1000, 140), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
+                )
+
             cv.imshow("Extrapolated pose", blackBg)
             cv.moveWindow("Extrapolated pose", 1280, 0)
+
+            cv.imshow("Extrapolated pose pixelated", pixelBlackBg)
+            cv.moveWindow("Extrapolated pose pixelated", 0, 0)
 
             # Quit if 'q' is pressed
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
         
         except: 
-            print("Sum ting wong, wi tu low, ho lee fuk, bang ding ouw...")
+            print("something went wrong...")
             break
 
 if __name__ == "__main__":
