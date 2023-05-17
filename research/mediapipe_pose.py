@@ -50,7 +50,7 @@ def estimate_pose(cam_or_vid: str):
         # Get frame from vid or webcam
         _, frame = cap.read()
 
-        w, h = (64, 64)
+        w, h = (200, 200)
 
         # Resize captured frame to preset values
         frame = cv.resize(frame, (WIDTH, HEIGHT))
@@ -221,18 +221,6 @@ def estimate_pose(cam_or_vid: str):
             cv.putText(
                 blackBg, "fps: " + str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3
             )
-            cv.putText(
-                blackBg, "shoulders_dist: " + str(int(pythagoras_normalized(leftShoulder, rightShoulder))), (1000, 50), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-                )
-            cv.putText(
-            blackBg, "hips_dist: " + str(int(pythagoras_normalized(leftHip, rightHip))), (1000, 80), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-            )
-            cv.putText(
-                blackBg, "left_side_dist: " + str(int(pythagoras_normalized(leftShoulder, leftHip))), (1000, 110), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-                )
-            cv.putText(
-                blackBg, "right_side_dist: " + str(int(pythagoras_normalized(leftShoulder, rightHip))), (1000, 140), cv.FONT_HERSHEY_PLAIN, 1, (252, 165, 3), 1
-                )
 
             cv.imshow("Extrapolated pose", blackBg)
             cv.moveWindow("Extrapolated pose", 1280, 0)
@@ -245,7 +233,7 @@ def estimate_pose(cam_or_vid: str):
                 break
         
         except: 
-            print("something went wrong...")
+            print("sum ting wong")
             break
 
 if __name__ == "__main__":
