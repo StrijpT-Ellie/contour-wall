@@ -3,11 +3,9 @@ import time
 import math
 
 import cv2 as cv
-import cvzone as cvz
 import mediapipe as mp
 import numpy as np
 
-from PIL import ImageFont
 
 WIDTH = 1280
 HEIGHT = 960
@@ -50,7 +48,7 @@ def estimate_pose(cam_or_vid: str):
         # Get frame from vid or webcam
         _, frame = cap.read()
 
-        w, h = (200, 200)
+        w, h = (40, 30)
 
         # Resize captured frame to preset values
         frame = cv.resize(frame, (WIDTH, HEIGHT))
