@@ -38,7 +38,7 @@ output = prediction.cpu().numpy()
 
 output = cv.normalize(output, None, 0, 1, norm_type=cv.NORM_MINMAX, dtype=cv.CV_64F)
 output = (output * 255).astype(np.uint8)
-output = cv.applyColorMap(output, cv.COLORMAP_VIRIDIS)
+output = cv.applyColorMap(output, cv.COLORMAP_MAGMA)
 
 scale_percent = 35 # percent of original size
 width = int(output.shape[1] * scale_percent / 100)
@@ -49,7 +49,7 @@ output = cv.resize(output, dim, interpolation = cv.INTER_LINEAR)
 img = cv.resize(img, dim, interpolation = cv.INTER_LINEAR)
 
 cv.imshow('output', output)
-cv.imwrite('docs/large_viridis_trilinear.jpg', output)
+cv.imwrite('docs/large.jpg', output)
 cv.imwrite('docs/workspace.jpg', img)
 
 cv.waitKey(0)
