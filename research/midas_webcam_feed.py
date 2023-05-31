@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 # model_type = "DPT_Large"
-#model_type = "DPT_Hybrid"
+# model_type = "DPT_Hybrid"
 model_type = "MiDaS_small"
 
 midas = torch.hub.load("intel-isl/MiDaS", model_type)

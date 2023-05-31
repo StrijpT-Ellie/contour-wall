@@ -2,11 +2,11 @@ import cv2 as cv
 import torch
 import numpy as np
 
-filename = 'sauce/workspace.jpg'
+filename = 'sauce/without_person.jpg'
 img = cv.imread(filename)
 
-model_type = "DPT_Large"
-# model_type = "DPT_Hybrid"
+# model_type = "DPT_Large"
+model_type = "DPT_Hybrid"
 # model_type = "MiDaS_small"
 
 midas = torch.hub.load("intel-isl/MiDaS", model_type)
@@ -49,8 +49,7 @@ output = cv.resize(output, dim, interpolation = cv.INTER_LINEAR)
 img = cv.resize(img, dim, interpolation = cv.INTER_LINEAR)
 
 cv.imshow('output', output)
-cv.imwrite('docs/large.jpg', output)
-cv.imwrite('docs/workspace.jpg', img)
+cv.imwrite('docs/midas_without_person.jpg', output)
 
 cv.waitKey(0)
 cv.destroyAllWindows()
