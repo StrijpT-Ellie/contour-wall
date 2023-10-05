@@ -7,8 +7,8 @@ import mediapipe as mp
 import numpy as np
 
 
-WIDTH = 1280
-HEIGHT = 960
+WIDTH = 1920
+HEIGHT = 1080
 
 def pythagoras_normalized(landmarkA, landmarkB):
     return math.sqrt(
@@ -39,7 +39,7 @@ def estimate_pose(cam_or_vid: str):
 
     previous_frame_time = 0
 
-    cap = cv.VideoCapture(0, cv.CAP_DSHOW) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
+    cap = cv.VideoCapture(1, cv.CAP_DSHOW) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid, cv.CAP_DSHOW)
     pose = mp_pose.Pose(
         min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=0
     )
@@ -221,10 +221,10 @@ def estimate_pose(cam_or_vid: str):
             )
 
             cv.imshow("Extrapolated pose", blackBg)
-            cv.moveWindow("Extrapolated pose", 1280, 0)
+            # cv.moveWindow("Extrapolated pose", 1280, 0)
 
             cv.imshow("Extrapolated pose pixelated", pixelBlackBg)
-            cv.moveWindow("Extrapolated pose pixelated", 0, 0)
+            # cv.moveWindow("Extrapolated pose pixelated", 0, 0)
 
             # Quit if 'q' is pressed
             if cv.waitKey(1) & 0xFF == ord("q"):
