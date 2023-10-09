@@ -4,13 +4,13 @@ import datetime
 import imutils as imu
 import time
 
-# Initialize camera capture for both cameras (1 and 2 typically represent the first and second cameras)
-camera1 = cv.VideoCapture(1, cv.CAP_DSHOW)
-camera2 = cv.VideoCapture(2, cv.CAP_DSHOW)
+# Initialize camera capture for both cameras (0 and 1 typically represent the first and second cameras IF there is no laptop/integrated camera present)
+camera1 = cv.VideoCapture(0, cv.CAP_DSHOW)
+camera2 = cv.VideoCapture(1, cv.CAP_DSHOW)
 
 # Check if the cameras are opened successfully
 if not camera1.isOpened() or not camera2.isOpened():
-    print("Error: Could not open cameras.")
+    print("[INFO]: Could not open cameras.")
     exit()
 
 # Capture a single frame from each camera
@@ -21,7 +21,7 @@ ret2, frame2 = camera2.read()
 camera1.release()
 camera2.release()
 
-print("[INFO] loading images...")
+print("[INFO]: Loading images...")
 if ret1 and ret2:
     # Create a directory with the current date and time as the name
     current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -31,16 +31,16 @@ if ret1 and ret2:
     os.makedirs(save_directory, exist_ok=True)
 
     # Save the captured frames in the directory
-    cv.imwrite(os.path.join(save_directory, "cam_l.jpg"), frame1)
-    cv.imwrite(os.path.join(save_directory, "cam_r.jpg"), frame2)
+    cv.imwrite(os.path.join(save_directory, "camera_left.jpg"), frame1)
+    cv.imwrite(os.path.join(save_directory, "camera_right.jpg"), frame2)
 
-    cv.imshow("cam_l", frame1)
-    cv.imshow("cam_r", frame2)
+    cv.imshow("camera_left", frame1)
+    cv.imshow("camera_right", frame2)
 
-    print(f"Images saved in directory: {save_directory}")
+    print(f"[INFO]: Images saved in directory: {save_directory}")
 
     # Perform image stitching
-    print("[INFO] stitching images...")
+    print("[INFO]: Stitching images...")
     stitcher = cv.createStitcher() if imu.is_cv3() else cv.Stitcher_create()
 
     start_time = time.time()
@@ -51,10 +51,10 @@ if ret1 and ret2:
         # Save the stitched image to the "docs/stitching" directory
         stitch_filename = os.path.join(save_directory, f"{current_time}_stitched.jpg")
         cv.imwrite(stitch_filename, stitched)
-        print(f"Stitched image saved as {stitch_filename}")
-
+        print(f"[INFO]: Stitched image saved as {stitch_filename}")
+ 
         # Display the stitched image
-        cv.imshow("Stitched Image", stitched)
+        cv.imshow("Stitched image", stitched)
 
         # Calculate and write the stitching duration to the text file
         stitching_duration = end_time - start_time
@@ -71,7 +71,7 @@ if ret1 and ret2:
             with open(text_filename, "w") as text_file:
                 text_file.write(f"Distance: 25cm\n")
                 text_file.write(f"View: forward with camera slanted down\n")
-        print("[INFO] image stitching failed ({})".format(status))
+        print("[INFO]: Image stitching failed ({})".format(status))
 
         # Rename the directory to indicate the failure
         os.rename(save_directory, save_directory + " - fail")
@@ -79,4 +79,4 @@ if ret1 and ret2:
     cv.waitKey(0)
     cv.destroyAllWindows()
 else:
-    print("Error: Failed to capture frames from one or both cameras.")
+    print("[INFO]: Failed to capture frames from one or both cameras.")
