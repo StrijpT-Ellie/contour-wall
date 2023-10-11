@@ -71,15 +71,15 @@ if all(frame is not None for frame in frames):
             text_filename = os.path.join(save_directory, "testing_data.txt")
             with open(text_filename, "w") as text_file:
                 text_file.write(f"Stitching Duration (seconds): {stitching_duration:.4f}\n")
-                text_file.write(f"Distance: 25cm\n")
-                text_file.write(f"View: forward with camera slanted down\n")
+                text_file.write(f"Distance: 100cm\n")
+                text_file.write(f"View: forward, auto-exposure off\n")
     else:
         # Check if the directory still exists (it might have been renamed in case of a failure)
         if os.path.exists(save_directory):
             text_filename = os.path.join(save_directory, "testing_data.txt")
             with open(text_filename, "w") as text_file:
-                text_file.write(f"Distance: 25cm\n")
-                text_file.write(f"View: forward with camera slanted down\n")
+                text_file.write(f"Distance: 100cm\n")
+                text_file.write(f"View: forward, auto-exposure off\n")
         print("[INFO] Image stitching failed ({})".format(status))
 
         # Rename the directory to indicate the failure

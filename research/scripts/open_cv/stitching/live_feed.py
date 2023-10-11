@@ -22,7 +22,6 @@ while True:
             if ret:
                 # Display the frame from the camera
                 cv.imshow(f"camera_{idx}", frame)
-                cv.moveWindow(f"camera_{idx}", idx*650, 0)
 
     # Exit the loop when the 'q' key is pressed
     if cv.waitKey(1) & 0xFF == ord('q'):
