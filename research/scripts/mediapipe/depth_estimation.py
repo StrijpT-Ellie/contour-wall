@@ -105,8 +105,8 @@ data = {
         "static_image_mode": args.static_image
     },
     "image_data": {
-        "height": height,
-        "width": width
+        "width": width,
+        "height": height
     },
     "data": {
         "distances_cm": distances_cm,
