@@ -9,10 +9,13 @@ import re
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+import json
 
 parser = argparse.ArgumentParser(description="Script to process images and add pose information.")
 
 parser.add_argument("--dir", type=str, default="default_name", help="Directory from and to which to read and write images.")
+parser.add_argument("--model_complexity", type=int, default=1, help="Model complexity.")
+parser.add_argument("--static_image", type=bool, default=True, help="Static mode.")
 
 args = parser.parse_args()
 
@@ -21,8 +24,6 @@ mpPose = mp.solutions.pose
 
 distances_cm = []
 distances_px = []
-
-# Images should be named like so "honza_250.jpg" i.e. "name_distanceInCm.jpg"
  
 directory = "../../sauce/" + args.dir
 images = []
@@ -36,15 +37,14 @@ output_directory = os.path.join("../../results", current_date)
 os.makedirs(output_directory, exist_ok=True)
 
 with mpPose.Pose(
-       static_image_mode=True,
-       model_complexity=1) as pose:
+       static_image_mode=args.static_image,
+       model_complexity=args.model_complexity) as pose:
     for image_name in images:
 
         img = cv.imread(os.path.join(directory, image_name))
         imgRGB = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         results = pose.process(imgRGB)
 
-        # Calculate the lenght of the neck for depth estimation (assuming average lenght of a neck is 105mm https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6994911/)
         if results.pose_landmarks:
             landmark = results.pose_landmarks.landmark
             mpDraw.draw_landmarks(img, results.pose_landmarks, mpPose.POSE_CONNECTIONS)
@@ -83,9 +83,9 @@ with mpPose.Pose(
         img_output_path = os.path.join(output_directory, image_name)
         cv.imwrite(img_output_path, img)
 
-        wdh = 1920
-        hgt = 1440
-        dimensions = (wdh, hgt)
+        width = 1920
+        height = 1440
+        dimensions = (width, height)
 
         img = cv.resize(img, dimensions, interpolation= cv.INTER_LINEAR)
         # cv.imshow(image_name, img)
@@ -96,5 +96,25 @@ plt.title('Pixel Distance vs. Distance in Centimeters')
 plt.xlabel('Distance (cm)')
 plt.ylabel('Pixel Distance')
 
-plot_output_path = os.path.join(output_directory, "plot_image.png")
+plot_output_path = os.path.join(output_directory, "aa_plot_image.png")
 plt.savefig(plot_output_path)
+
+data = {
+    "pose_data": {
+        "model_complexity": args.model_complexity,
+        "static_image_mode": args.static_image
+    },
+    "image_data": {
+        "height": height,
+        "width": width
+    },
+    "data": {
+        "distances_cm": distances_cm,
+        "distances_px": distances_px
+    }
+}
+
+file_path = os.path.join(output_directory, "ab_config_data_log.json")
+
+with open(file_path, "w") as file:
+    json.dump(data, file, indent=4)
