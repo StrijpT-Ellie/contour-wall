@@ -53,12 +53,8 @@ with mpPose.Pose(
             nose_landmark = mpPose.PoseLandmark.NOSE
 
             shoulder_coords = (
-                int(
-                    (landmark[12].x + landmark[11].x) * img.shape[1] / 2
-                ),
-                int(
-                    (landmark[12].y + landmark[11].y) * img.shape[0] / 2
-                ),
+                int((landmark[12].x + landmark[11].x) * img.shape[1] / 2),
+                int((landmark[12].y + landmark[11].y) * img.shape[0] / 2),
             )
 
             nose_coords = (
@@ -68,10 +64,7 @@ with mpPose.Pose(
 
             cv.line(img, shoulder_coords, nose_coords, (0, 255, 0), 3)
 
-            distance_px = np.sqrt(
-                    (nose_coords[0] - shoulder_coords[0]) ** 2
-                    + (nose_coords[1] - shoulder_coords[1]) ** 2
-                )
+            distance_px = np.sqrt((nose_coords[0] - shoulder_coords[0]) ** 2 + (nose_coords[1] - shoulder_coords[1]) ** 2)
             
             distance_cm = int(re.findall(r'\d+', image_name)[0]) if re.findall(r'\d+', image_name) else 0
             
