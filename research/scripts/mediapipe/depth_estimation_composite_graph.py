@@ -29,6 +29,9 @@ mpPose = mp.solutions.pose
 
 all_distances_cm = []
 all_distances_px = []
+
+averaged_distances_px = []
+
 plot_colors = [
     "black",
     "blue",
@@ -109,17 +112,63 @@ with mpPose.Pose(static_image_mode=True, model_complexity=2) as pose:
         all_distances_cm.append(distances_cm)
         all_distances_px.append(distances_px)
 
-for i in range(len(child_dirs)):
+# basically how many image files in each person's file
+for datapoint_index in range(6):
+    average_distance_px = 0
+    # basically how many people there are
+    for array_index in range(len(all_distances_px)):
+        average_distance_px += all_distances_px[array_index][datapoint_index]
+        print(all_distances_px[array_index][datapoint_index])
+
+    print(f"end of {datapoint_index} datapoint_index")
+    average_distance_px = average_distance_px / len(all_distances_px)
+    print("average_distance_px: " + str(average_distance_px))
+    averaged_distances_px.append(average_distance_px)
+
+
+# for i in range(len(child_dirs)):
+#     color_index = i % len(plot_colors)
+#     plt.plot(
+#         all_distances_cm[i],
+#         all_distances_px[i],
+#         "o",
+#         markersize=1,
+#         color=plot_colors[color_index],
+#     )
+#     plt.plot(
+#         distances_cm[i],
+#         averaged_distances_px[i],
+#         "o",
+#         markersize=5,
+#         color="black",
+#     )
+
+for i in range(len(all_distances_px)):
     color_index = i % len(plot_colors)
     plt.plot(
         all_distances_cm[i],
         all_distances_px[i],
-        "-",
-        markersize=0.75,
-        label=f"Distances for {child_dirs[i]}",
+        "o",
+        markersize=1,
         color=plot_colors[color_index],
+        label=f"Distances for {child_dirs[i]}",
     )
 
+for i in range(len(distances_cm)):
+    plt.plot(
+        distances_cm[i],
+        averaged_distances_px[i],
+        "o",
+        markersize=5,
+        color="black",
+    )
+
+print("ALL DISTANCES PX: ")
+print(all_distances_px)
+print("AVERAGED DISTANCES PX: ")
+print(averaged_distances_px)
+print("DISTANCES CM: ")
+print(distances_cm)
 plt.title("Pixel Distance vs. Frames")
 plt.xlabel("Distance (cm)")
 plt.ylabel("Distance (px)")
