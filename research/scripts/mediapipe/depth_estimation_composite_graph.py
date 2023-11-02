@@ -125,30 +125,12 @@ for datapoint_index in range(6):
     print("average_distance_px: " + str(average_distance_px))
     averaged_distances_px.append(average_distance_px)
 
-
-# for i in range(len(child_dirs)):
-#     color_index = i % len(plot_colors)
-#     plt.plot(
-#         all_distances_cm[i],
-#         all_distances_px[i],
-#         "o",
-#         markersize=1,
-#         color=plot_colors[color_index],
-#     )
-#     plt.plot(
-#         distances_cm[i],
-#         averaged_distances_px[i],
-#         "o",
-#         markersize=5,
-#         color="black",
-#     )
-
 for i in range(len(all_distances_px)):
     color_index = i % len(plot_colors)
     plt.plot(
         all_distances_cm[i],
         all_distances_px[i],
-        "o",
+        "-",
         markersize=1,
         color=plot_colors[color_index],
         label=f"Distances for {child_dirs[i]}",
@@ -158,7 +140,7 @@ for i in range(len(distances_cm)):
     plt.plot(
         distances_cm[i],
         averaged_distances_px[i],
-        "o",
+        ".",
         markersize=5,
         color="black",
     )
