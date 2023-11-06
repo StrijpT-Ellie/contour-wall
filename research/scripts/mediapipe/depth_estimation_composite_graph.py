@@ -24,6 +24,8 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+plot_color = "#fffaee"
+
 mpDraw = mp.solutions.drawing_utils
 mpPose = mp.solutions.pose
 
@@ -32,17 +34,7 @@ all_distances_px = []
 
 averaged_distances_px = []
 
-plot_colors = [
-    "black",
-    "blue",
-    "red",
-    "green",
-    "purple",
-    "orange",
-    "pink",
-    "brown",
-    "gray",
-]
+plot_colors = ["red", "green", "blue", "orange", "yellow", "purple"]
 
 parent_directory = "../../sauce/" + args.dir  # final_location | teacher_table_location
 
@@ -125,22 +117,27 @@ for datapoint_index in range(6):
     print("average_distance_px: " + str(average_distance_px))
     averaged_distances_px.append(average_distance_px)
 
+plt.figure(facecolor=plot_color)
+
+plt.gca().set_facecolor(plot_color)
+
 for i in range(len(all_distances_px)):
     color_index = i % len(plot_colors)
     plt.plot(
         all_distances_cm[i],
         all_distances_px[i],
-        "-",
-        markersize=1,
+        "o",
+        markersize=3,
         color=plot_colors[color_index],
         label=f"Distances for {child_dirs[i]}",
+        alpha=0.3,
     )
 
 for i in range(len(distances_cm)):
     plt.plot(
         distances_cm[i],
         averaged_distances_px[i],
-        ".",
+        "o",
         markersize=5,
         color="black",
     )
@@ -154,5 +151,14 @@ print(distances_cm)
 plt.title("Pixel Distance vs. Frames")
 plt.xlabel("Distance (cm)")
 plt.ylabel("Distance (px)")
-plt.legend()
+
+legend = plt.legend()
+legend.get_frame().set_facecolor(plot_color)
+
+plot_output_path = os.path.join(
+    parent_directory, parent_directory + "aa_composite_plot.png"
+)
+plt.savefig(plot_output_path)
+
+
 plt.show()
