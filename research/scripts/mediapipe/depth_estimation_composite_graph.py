@@ -156,7 +156,7 @@ legend = plt.legend()
 legend.get_frame().set_facecolor(plot_color)
 
 plot_output_path = os.path.join(
-    parent_directory, parent_directory + "aa_composite_plot.png"
+    parent_directory, parent_directory + "_aa_composite_plot.png"
 )
 plt.savefig(plot_output_path)
 
