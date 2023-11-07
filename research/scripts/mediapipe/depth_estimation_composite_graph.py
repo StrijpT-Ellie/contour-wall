@@ -24,7 +24,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-plot_color = "#fffaee"
+plot_color = "#fff"
 
 mpDraw = mp.solutions.drawing_utils
 mpPose = mp.solutions.pose
