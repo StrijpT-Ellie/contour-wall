@@ -1,15 +1,16 @@
 import cv2 as cv
 import mediapipe as mp
 import numpy as np
+import time
 
 mpDraw = mp.solutions.drawing_utils
 mpPose = mp.solutions.pose
 
-
-
 factor = 1.2
 
 cap = cv.VideoCapture("../../sauce/unused/final_location/tara_400_150_50/tara_400_100_50_increments.mp4")
+
+previous_time = 0
 
 with mpPose.Pose(model_complexity=1) as pose:
     while cap.isOpened():
@@ -70,6 +71,20 @@ with mpPose.Pose(model_complexity=1) as pose:
                 right=int((width - cu_width) / 2),
                 borderType=cv.BORDER_CONSTANT,
                 value=[0, 0, 0],
+            )
+
+            current_time = time.time()
+            fps = 1 / (current_time - previous_time)
+            previous_time = current_time
+
+            cv.putText(
+                bordered_img,
+                "FPS: " + str(int(fps)),
+                (50, 50),
+                cv.FONT_HERSHEY_PLAIN,
+                3,
+                (255, 255, 255),
+                3,
             )
 
             cv.imshow("border", bordered_img)

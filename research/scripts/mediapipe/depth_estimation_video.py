@@ -86,6 +86,7 @@ with mpPose.Pose(
                 (nose_coords[0] - shoulder_coords[0]) ** 2
                 + (nose_coords[1] - shoulder_coords[1]) ** 2
             )
+            
             frame_counter += 1
             distances_px.append(distance_px)
             frames.append(frame_counter)
