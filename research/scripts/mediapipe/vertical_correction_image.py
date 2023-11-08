@@ -93,7 +93,7 @@ with mpPose.Pose(static_image_mode=True) as pose:
             5,
         )
 
-        # Indicato line drawn into each image, based on the size of the shoulder -> heels distance in pixels
+        # Indicator line drawn into each image, based on the size of the shoulder -> heels distance in pixels
         cv.line(image, (350, 200), (350, image.shape[0]), (0, 0, 255), 20)
         cv.imshow(
             f"image[{i}]",
