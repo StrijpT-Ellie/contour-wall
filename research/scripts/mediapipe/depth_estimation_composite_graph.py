@@ -47,7 +47,7 @@ child_dirs = [
     if os.path.isdir(os.path.join(parent_directory, d))
 ]
 
-with mpPose.Pose(static_image_mode=True, model_complexity=2) as pose:
+with mpPose.Pose(static_image_mode=True, model_complexity=1) as pose:
     # For each child_dir in parent_dirs
     for child_dir in child_dirs:
         child_dir_path = os.path.join(parent_directory, child_dir)
@@ -148,7 +148,7 @@ print("AVERAGED DISTANCES PX: ")
 print(averaged_distances_px)
 print("DISTANCES CM: ")
 print(distances_cm)
-plt.title("Pixel Distance vs. Frames")
+plt.title("Pixel Distance vs. Real Distance")
 plt.xlabel("Distance (cm)")
 plt.ylabel("Distance (px)")
 
