@@ -141,6 +141,15 @@ for i in range(len(distances_cm)):
         markersize=5,
         color="black",
     )
+    plt.text(
+        distances_cm[i],
+        averaged_distances_px[i],
+        f"({distances_cm[i]}, {averaged_distances_px[i]})",
+        fontsize=8,
+        verticalalignment='bottom',
+        horizontalalignment='right',
+        color='black'
+    )
 
 print("ALL DISTANCES PX: ")
 print(all_distances_px)
