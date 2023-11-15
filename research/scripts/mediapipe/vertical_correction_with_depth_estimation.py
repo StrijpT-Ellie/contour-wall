@@ -12,7 +12,7 @@ previous_time = 0
 
 # Formula derived from plotting the points of the average relation between distance in pixels on the screen and real distance in centimeters of the subject from the camera
 def getFactor(pixel_distance):
-    return abs(-0.018 * pixel_distance + 3.73)
+    return abs(-0.006 * pixel_distance + 2.1)
 
 # Defines the bounding box coordinates (start_point, end_point) that are later used to crop the frame so it still contains the subject but no other subjects
 def getBoundingPoints(image_landmarks, width, height):
@@ -36,6 +36,7 @@ def getBoundingPoints(image_landmarks, width, height):
 
 # Calculates the distance in pixels on the screen between the shoulder and hip landmarks
 def getPixelDistance(landmarks, img):
+
     knee_coords = (
         int((landmarks[26].x + landmarks[25].x) * img.shape[1] / 2),
         int((landmarks[26].y + landmarks[25].y) * img.shape[0] / 2),
@@ -96,7 +97,7 @@ if args.webcam:
     print("readin webcam")
 else:
     cap = cv.VideoCapture(
-        "../../sauce/final_location/wouter_400_150_50_cropped/wouter_400_100_50_increments.mp4"
+        "../../sauce/final_location/honza_400_150_50_cropped/honza_400_100_50_increments.mp4"
     )
     print("reading video")
 
@@ -104,6 +105,7 @@ else:
 with mpPose.Pose(model_complexity=0) as pose:
     # While video is being read
     while cap.isOpened():
+        w, h = (43, 32)
         ret, img = cap.read()
         imgRGB = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         results = pose.process(imgRGB)
@@ -171,7 +173,7 @@ with mpPose.Pose(model_complexity=0) as pose:
             cv.ellipse(
                 blackBg,
                 (int(nose.x * width), int(nose.y * height)),
-                (20, 30),
+                (30, 40),
                 0,
                 0,
                 360,
@@ -201,7 +203,7 @@ with mpPose.Pose(model_complexity=0) as pose:
                 -1,
             )
 
-            cv.line(blackBg, start, end, (255, 255, 255), 5)
+            cv.line(blackBg, start, end, (255, 255, 255), 15)
 
             # chest
             cv.fillPoly(blackBg, [chest_coordinates], color=(255, 255, 255))
@@ -237,7 +239,7 @@ with mpPose.Pose(model_complexity=0) as pose:
 
             # Crop image based on calculated coordinates
             cropped_img = blackBg[
-                points[0][1] : points[1][1], points[0][0] : points[1][0]
+                points[0][1]: points[1][1], points[0][0]: points[1][0]
             ]
 
             # Read and convert cropped image's height and width to integer values
@@ -256,23 +258,37 @@ with mpPose.Pose(model_complexity=0) as pose:
                 cropped_img, cropped_width, cropped_height, scaling_factor
             )
 
+            cropped_img_upscale_height, _, _ = cropped_img_upscale.shape
+            print(f"cropped img upscale height {str(cropped_img_upscale_height)}")
+
+            pixelBlackBg = cv.resize(cropped_img_upscale, (w, h), interpolation=cv.INTER_LINEAR)
+
+            pixelBlackBg = cv.resize(
+                pixelBlackBg, (960, 1280), interpolation=cv.INTER_NEAREST
+            )
+
             cv.putText(img, "factor: " + str(scaling_factor), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3)
             cv.putText(img, "distance_px: " + str(distance_px), (70, 150), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3)
 
-            cropped_img_upscale = cv.copyMakeBorder(
-                cropped_img_upscale,
-                top=height - cropped_height,
-                bottom=0,
-                left=int((width - cropped_height) / 2),
-                right=int((width - cropped_width) / 2),
-                borderType=cv.BORDER_CONSTANT,
-                value=[0, 0, 0],
-            )
-            cv.imshow("Native image", img)
+            # width_needed = ((width / 2) - (cropped_width / 2))
 
-            cv.imshow("Black background", blackBg)
+            # pixelBlackBg = cv.copyMakeBorder(
+            #     pixelBlackBg,
+            #     top=120,
+            #     bottom=0,
+            #     left=820,
+            #     right=820,
+            #     borderType=cv.BORDER_CONSTANT,
+            #     value=[0, 0, 0],
+            # )
 
-            cv.imshow("Black background cropped", cropped_img_upscale)
+            cv.imshow("pixels wee", pixelBlackBg)
+            # cv.moveWindow("pixels wee", 0, 0)
+            # cv.imshow("Native image", img)
+            #
+            # cv.imshow("Black background", blackBg)
+            #
+            # cv.imshow("Black background cropped", cropped_img_upscale)
 
         if cv.waitKey(1) & 0xFF == ord("q"):
             break
