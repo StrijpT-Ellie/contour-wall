@@ -10,7 +10,6 @@ import numpy as np
 WIDTH = 480 
 HEIGHT = 360
 
-
 def draw_line(landmarkA, landmarkB, frame, wideBoyFactor, hex="FFFFFF"):
     point1 = np.array([int(landmarkA.x * WIDTH), int(landmarkA.y* HEIGHT)])
     point2 = np.array([int(landmarkB.x * WIDTH), int(landmarkB.y * HEIGHT)])
@@ -130,7 +129,7 @@ def estimate_pose(cam_or_vid: str):
             360,
             (255, 255, 255),
             -1
-            )
+            )   
         
         # Elipse drawing over hands
         cv.ellipse(
