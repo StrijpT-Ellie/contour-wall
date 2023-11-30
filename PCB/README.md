@@ -6,17 +6,26 @@
 
 # Tech spec & info
 
-- **Total current**: 15mA * 24 = ~360mA
-- **Dimensions (WxH)**: 190mm x 290mm
-- **LED type**: WS2815 ([datasheet](http://www.normandled.com/upload/201808/WS2815%20LED%20Datasheet.pdf))
+- **Total current**: 60mA * 25 = 1500mA
+- **Dimensions (WxH)**: 220mm x 220mm (30mm space between the PCB's)
+- **Mounting hole grid size:**  12.5cm
+- **Mounting hole size:** 3mm
+- **LED type**: WS2812B ([datasheet](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf))
 - **Decoupling capacitor**: 100nF
 - Big 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
 - 1oz Copper layer
-- 12v trace has 5mm width. Can handle max of 7.5A
+- 5v trace has 7.5mm width. Can handle max of 10A
+
+
+# Dimensions
+
+> NOTE: Dimensions image is not to scale
+
+![dimensions](img/pcb_dimensions.png)
 
 # Electrical Schematic
 
-![schematic](img/Schematic_ELLIE-PCB.png)
+![schematic](img/Schematic_ELLIE_DISPLAY_PANEL.png)
 
 # PCB
 
