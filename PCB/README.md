@@ -2,7 +2,7 @@
 
 > **DO NOT RELOCATED THIS PAGE TO A DIFFERENT URL, A QR CODE ON THE PCB POINTS TO THIS**
 
-**View project online**: https://oshwlab.com/wouterpennings/ellie-pcb 
+All files to order more PCB's can be found in this directory. Ordered and assembled from JLCPCB with LCSC as part supplier.
 
 # Tech spec & info
 
@@ -12,9 +12,10 @@
 - **Mounting hole size:** 3mm
 - **LED type**: WS2812B ([datasheet](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf))
 - **Decoupling capacitor**: 100nF
-- Big 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
-- 1oz Copper layer
-- 5v trace has 7.5mm width. Can handle max of 10A
+- **Big Capacitor:** 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
+- **Coppper Thickness:** 1oz Copper layer
+- **Trace Width:** 5v trace has 7.5mm width. Can handle max of 10A
+- **Assembled PCB Weigth:** ~180 grams
 
 
 # Dimensions
