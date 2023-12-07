@@ -6,17 +6,16 @@ All files to order more PCB's can be found in this directory. Ordered and assemb
 
 # Tech spec & info
 
-- **Total current**: 60mA * 25 = 1500mA
-- **Dimensions (WxH)**: 220mm x 220mm (30mm space between the PCB's)
-- **Mounting hole grid size:**  12.5cm
+- **LED type:** WS2812B ([datasheet](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf))
+  - **Total current:** 60mA * 25 = 1500mA. However, in reality, one full-white WS2812B LED only uses 36mA. Therefore one board uses about 900mA.
+- **Dimensions (WxH):** 220mm x 220mm (30mm space between the PCB's)
+- **Mounting hole grid size:** 125mm
 - **Mounting hole size:** 3mm
-- **LED type**: WS2812B ([datasheet](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf))
 - **Decoupling capacitor**: 100nF
 - **Big Capacitor:** 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
 - **Coppper Thickness:** 1oz Copper layer
 - **Trace Width:** 5v trace has 7.5mm width. Can handle max of 10A
-- **Assembled PCB Weigth:** ~180 grams
-
+- **Assembled PCB Weigth:** ~180 grams (Including all SMD components)
 
 # Dimensions
 
