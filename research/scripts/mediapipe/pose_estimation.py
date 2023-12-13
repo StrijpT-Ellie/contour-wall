@@ -119,7 +119,7 @@ def estimate_pose(cam_or_vid: str):
         cv.ellipse(
             blackBg,
             (int(nose.x * WIDTH), int(nose.y * HEIGHT)),
-            (10, 15),
+            (15, 20),
             0,
             0,
             360,
@@ -159,31 +159,31 @@ def estimate_pose(cam_or_vid: str):
             int((leftHip.y * HEIGHT + rightHip.y * HEIGHT) / 2),
         )
         end = (int(nose.x * WIDTH), int(nose.y * HEIGHT))
-        cv.line(blackBg, start, end, (255, 255, 255), 5)
+        cv.line(blackBg, start, end, (255, 255, 255), 4)
 
         # left shoulder > left elbow
-        draw_line(leftShoulder, leftElbow, blackBg, 3.8)
+        draw_line(leftShoulder, leftElbow, blackBg, 3.2)
 
         # left elbow > left wrist
         draw_line(leftElbow, leftWrist, blackBg, 5)
 
         # left hip > left knee
-        draw_line(leftHip, leftKnee, blackBg, 3)
+        draw_line(leftHip, leftKnee, blackBg, 4)
 
         # left knee > left ankle
-        draw_line(leftKnee, leftAnkle, blackBg, 3.5)
+        draw_line(leftKnee, leftAnkle, blackBg, 4.5)
 
         # right shoulder > right elbow
-        draw_line(rightShoulder, rightElbow, blackBg, 3.8)
+        draw_line(rightShoulder, rightElbow, blackBg, 3.2)
 
         # right elbow > right wrist
         draw_line(rightElbow, rightWrist, blackBg, 5)
 
         # right hip > right knee
-        draw_line(rightHip, rightKnee, blackBg, 3)
+        draw_line(rightHip, rightKnee, blackBg, 4)
 
         # right knee > right ankle
-        draw_line(rightKnee, rightAnkle, blackBg, 3.5)
+        draw_line(rightKnee, rightAnkle, blackBg, 4.5)
 
         # cv.imshow("Original feed", frame)
         # cv.moveWindow("Original feed", 0, 0)
@@ -208,7 +208,7 @@ def estimate_pose(cam_or_vid: str):
         )
 
         cv.imshow("Extrapolated pose pixelated", pixelBlackBg)
-        cv.moveWindow("Extrapolated pose pixelated", 0, 0)
+        # cv.moveWindow("Extrapolated pose pixelated", 0, 0)
 
         # Quit if 'q' is pressed
         if cv.waitKey(1) & 0xFF == ord("q"):

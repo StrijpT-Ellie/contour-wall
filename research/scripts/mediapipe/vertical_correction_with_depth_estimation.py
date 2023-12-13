@@ -88,7 +88,6 @@ def drawEllipse(img, landmark, axes):
 parser = argparse.ArgumentParser(
     description="Pose estimation and image processing script."
 )
-parser.add_argument("--video", action="store_true")
 parser.add_argument("--webcam", action="store_true")
 args = parser.parse_args()
 
@@ -282,7 +281,8 @@ with mpPose.Pose(model_complexity=0) as pose:
             #     value=[0, 0, 0],
             # )
 
-            cv.imshow("pixels wee", pixelBlackBg)
+            cv.imshow("native_image", img)
+            cv.imshow("corrected_pixelated_image", pixelBlackBg)
             # cv.moveWindow("pixels wee", 0, 0)
             # cv.imshow("Native image", img)
             #
