@@ -2,21 +2,30 @@
 
 > **DO NOT RELOCATED THIS PAGE TO A DIFFERENT URL, A QR CODE ON THE PCB POINTS TO THIS**
 
-**View project online**: https://oshwlab.com/wouterpennings/ellie-pcb 
+All files to order more PCB's can be found in this directory. Ordered and assembled from JLCPCB with LCSC as part supplier.
 
 # Tech spec & info
 
-- **Total current**: 15mA * 24 = ~360mA
-- **Dimensions (WxH)**: 190mm x 290mm
-- **LED type**: WS2815 ([datasheet](http://www.normandled.com/upload/201808/WS2815%20LED%20Datasheet.pdf))
+- **LED type:** WS2812B ([datasheet](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf))
+  - **Total current:** 60mA * 25 = 1500mA. However, in reality, one full-white WS2812B LED only uses 36mA. Therefore one board uses about 900mA.
+- **Dimensions (WxH):** 220mm x 220mm (30mm space between the PCB's)
+- **Mounting hole grid size:** 125mm
+- **Mounting hole size:** 3mm
 - **Decoupling capacitor**: 100nF
-- Big 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
-- 1oz Copper layer
-- 12v trace has 5mm width. Can handle max of 7.5A
+- **Big Capacitor:** 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
+- **Coppper Thickness:** 1oz Copper layer
+- **Trace Width:** 5v trace has 7.5mm width. Can handle max of 10A
+- **Assembled PCB Weigth:** ~180 grams (Including all SMD components)
+
+# Dimensions
+
+> NOTE: Dimensions image is not to scale
+
+![dimensions](img/pcb_dimensions.png)
 
 # Electrical Schematic
 
-![schematic](img/Schematic_ELLIE-PCB.png)
+![schematic](img/Schematic_ELLIE_DISPLAY_PANEL.png)
 
 # PCB
 
