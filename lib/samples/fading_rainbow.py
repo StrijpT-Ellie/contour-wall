@@ -23,8 +23,6 @@ while True:
     for i in range(255):
         cw.pixels[:] = scroll(i)
         cw.show()
-        time.sleep(0.01)
     for i in range(255):
         cw.pixels[:] = scroll(255 - i)
         cw.show()
-        time.sleep(0.01)
