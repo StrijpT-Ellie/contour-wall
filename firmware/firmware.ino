@@ -1,7 +1,7 @@
 #include <FastLED.h>
 
 #define BUILTIN_LED 2
-#define NUM_LEDS 400
+#define NUM_LEDS 25
 #define WS2812B_PIN 12
 #define BUFFER_SIZE NUM_LEDS * 3
 
@@ -14,11 +14,16 @@ void emptySerialBuffer() {
   }
 }
 
-void fillLEDS() {
+byte fillLEDS() {
+  byte crc = 0;
+
   for (int i = 0; i < BUFFER_SIZE / 3; i++) {
     int bufferIndex = i * 3;
     leds[i] = CRGB(buffer[bufferIndex+1], buffer[bufferIndex + 2], buffer[bufferIndex + 0]);
+    crc += buffer[bufferIndex + 0] + buffer[bufferIndex + 1] + buffer[bufferIndex + 2];
   }
+
+  return crc;
 }
 
 void setup() {
@@ -35,19 +40,30 @@ void setup() {
 void loop() {
   int bytesCount = Serial.readBytes(buffer, BUFFER_SIZE);
 
-  // Probably be unnecessary, as Serial.readBytes removes the read bytes from the RX buffer
-  emptySerialBuffer();
+  if(Serial.available() == 1) {
+    byte crc = Serial.read();
 
-  if (bytesCount > 0) {
-    digitalWrite(BUILTIN_LED, HIGH);
+    if (bytesCount > 0) {
+      digitalWrite(BUILTIN_LED, HIGH); // Signaling 
 
-    fillLEDS();
-    FastLED.show();
+      if(fillLEDS() == crc) {
+        FastLED.show();
+      } else {
+        // ERROR: CRC is not correct, return error to master.
+        // TODO: Implement error/status reports to master
+      }
+      
+      // Not essential as, the buffer will always be completely overwritten when RX recevies new data.
+      memset(buffer, 0, BUFFER_SIZE);
 
-    // Not essential as, the buffer will always be completely overwritten when RX recevies new data.
-    memset(buffer, 0, BUFFER_SIZE);
+      digitalWrite(BUILTIN_LED, LOW);
+    }
+  } else {
+    // TODO: When program is here, something went wrong in the "syncing" of the protocol,
+    // some kind of "restart" or "resyncing" needs to happen
 
-    digitalWrite(BUILTIN_LED, LOW);
+    // Probably be unnecessary, as Serial.readBytes removes the read bytes from the RX buffer 
+    emptySerialBuffer();
   }
 
   delay(1);
