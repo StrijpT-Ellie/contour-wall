@@ -1,7 +1,7 @@
 #include <FastLED.h>
 
 #define BUILTIN_LED 2
-#define NUM_LEDS 25
+#define NUM_LEDS 400
 #define WS2812B_PIN 12
 #define BUFFER_SIZE NUM_LEDS * 3
 
