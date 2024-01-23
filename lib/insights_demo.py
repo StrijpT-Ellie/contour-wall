@@ -8,6 +8,7 @@ import time
 width = 640
 height = 480
 
+
 def calculate_hue_angle(x, y):
     return (np.degrees(np.arctan2(y, x)) + 180) % 360
 
@@ -22,35 +23,35 @@ def interpolate_color(angle):
         return int(255 * (1 - (angle - 240) / 120)), int(255 * ((angle - 240) / 120)), 0
 
 
-def draw_palm_box(frame, palm_landmarks, scale_factor=1, output_size=(20, 20), upscale_factor=5):
+def draw_palm_boxes(frame, hand_landmarks, scale_factor=1, output_size=(20, 20), upscale_factor=5):
+    """
+        Function to draw palm boxes on the image.
+        :param frame: input image
+        :param hand_landmarks: list of hand landmarks
+        :param scale_factor: factor to scale the size of the image
+        :param output_size: size of the output image
+        :param upscale_factor: factor to upscale the output image
+        :return: frame with palm boxes
+    """
 
     black_frame = np.zeros_like(frame)
 
-    if palm_landmarks:
-        # Get coordinates of specific landmarks
-        landmarks_indices = [0, 1, 2, 5, 9, 13, 17]
-        landmarks_coordinates = np.array(
-            [(palm_landmarks[i].x * width, palm_landmarks[i].y * height) for i in landmarks_indices], dtype=np.int32)
+    if hand_landmarks:
+        for landmarks in hand_landmarks:
+            landmarks_indices = [0, 1, 2, 5, 9, 13, 17]
+            landmarks_coordinates = np.array(
+                [(landmarks[i].x * width, landmarks[i].y * height) for i in landmarks_indices], dtype=np.int32)
 
-        # Calculate bounding box parameters and apply the scale factor
-        x, y, w, h = cv2.boundingRect(landmarks_coordinates)
-        w *= scale_factor
-        h *= scale_factor
+            x, y, w, h = cv2.boundingRect(landmarks_coordinates)
+            w *= scale_factor
+            h *= scale_factor
 
-        # Calculate hue based on hand orientation
-        hue_angle = calculate_hue_angle(palm_landmarks[9].x - palm_landmarks[5].x,
-                                        palm_landmarks[9].y - palm_landmarks[5].y)
+            hue_angle = calculate_hue_angle(landmarks[9].x - landmarks[5].x, landmarks[9].y - landmarks[5].y)
+            color = interpolate_color(hue_angle)
 
-        # Interpolate color based on hue angle
-        color = interpolate_color(hue_angle)
+            cv2.ellipse(black_frame, ((x + w // 2, y + h // 2), (w, h), 0), color, -1)
 
-        # Draw a filled oval (ellipse) around the center of the palm on the black background
-        cv2.ellipse(black_frame, ((x + w // 2, y + h // 2), (w, h), 0), color, -1)
-
-    # Resize the black frame to the desired output size
     black_frame_resized = cv2.resize(black_frame, output_size, interpolation=cv2.INTER_AREA)
-
-    # Upscale the image 
     upscaled_frame = cv2.resize(black_frame_resized, (output_size[0] * upscale_factor, output_size[1] * upscale_factor),
                                 interpolation=cv2.INTER_NEAREST)
 
@@ -87,34 +88,50 @@ def hand_tracking():
 
         results = hands.process(rgb_frame)
 
+
+
         if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                upscaled_frame = draw_palm_box(frame, hand_landmarks.landmark, output_size=(20, 20), upscale_factor=1)
-                # cv2.imwrite(os.path.join(save_dir,f'upscaled_frame_{frame_counter:04}.png'), upscaled_frame)
-                # frame_counter += 1
-                cv2.imshow("Hand Tracking", upscaled_frame)
-                cw.pixels = upscaled_frame
-                cw.show()
+            hand_landmarks_list = [hand.landmark for hand in results.multi_hand_landmarks]
+            upscaled_frame = draw_palm_boxes(frame, hand_landmarks_list, output_size=(20, 20), upscale_factor=1)
+            # cv2.imwrite(os.path.join(save_dir,f'upscaled_frame_{frame_counter:04}.png'), upscaled_frame)
+            # frame_counter += 1
+            cv2.imshow("Hand Tracking", upscaled_frame)
+            cw.pixels = upscaled_frame
+            cw.show()
         else:
-            # Show a black screen when no landmarks are found
-            black_frame_same_size = draw_palm_box(frame, [], output_size=(20, 20), upscale_factor=1)
+            black_frame_same_size = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
             cv2.imshow("Hand Tracking", black_frame_same_size)
             cw.pixels = black_frame_same_size
             cw.show()
+
+        # if results.multi_hand_landmarks:
+        #     for hand_landmarks in results.multi_hand_landmarks:
+        #         upscaled_frame = draw_palm_box(frame, hand_landmarks.landmark, output_size=(20, 20), upscale_factor=1)
+        #         # cv2.imwrite(os.path.join(save_dir,f'upscaled_frame_{frame_counter:04}.png'), upscaled_frame)
+        #         # frame_counter += 1
+        #         cv2.imshow("Hand Tracking", upscaled_frame)
+        #         cw.pixels = upscaled_frame
+        #         cw.show()
+        # else:
+        #     # Show a black screen when no landmarks are found
+        #     black_frame_same_size = draw_palm_box(frame, [], output_size=(20, 20), upscale_factor=1)
+        #     cv2.imshow("Hand Tracking", black_frame_same_size)
+        #     cw.pixels = black_frame_same_size
+        #     cw.show()
 
         current_time = time.time()
         fps = 1 / (current_time - previous_time)
         previous_time = current_time
 
         cv2.putText(
-                frame,
-                str(int(fps)),
-                (50, 100),
-                cv2.FONT_HERSHEY_PLAIN,
-                3,
-                (0, 255, 0),
-                3,
-            )
+            frame,
+            str(int(fps)),
+            (50, 100),
+            cv2.FONT_HERSHEY_PLAIN,
+            3,
+            (0, 255, 0),
+            3,
+        )
 
         cv2.imshow("Hand", frame)
 
