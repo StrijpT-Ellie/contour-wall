@@ -71,12 +71,6 @@ def hand_tracking():
     cap.set(3, width)
     cap.set(4, height)
 
-    # frame_counter = 0
-
-    # save_dir = "saved_frames"
-    # if not os.path.exists(save_dir):
-    #     os.makedirs(save_dir)
-
     while True:
         ret, frame = cap.read()
 
@@ -88,36 +82,15 @@ def hand_tracking():
 
         results = hands.process(rgb_frame)
 
-
-
         if results.multi_hand_landmarks:
             hand_landmarks_list = [hand.landmark for hand in results.multi_hand_landmarks]
-            upscaled_frame = draw_palm_boxes(frame, hand_landmarks_list, output_size=(20, 20), upscale_factor=1)
-            # cv2.imwrite(os.path.join(save_dir,f'upscaled_frame_{frame_counter:04}.png'), upscaled_frame)
-            # frame_counter += 1
-            cv2.imshow("Hand Tracking", upscaled_frame)
-            cw.pixels = upscaled_frame
-            cw.show()
+            frame_to_show = draw_palm_boxes(frame, hand_landmarks_list, output_size=(20, 20), upscale_factor=1)
         else:
-            black_frame_same_size = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
-            cv2.imshow("Hand Tracking", black_frame_same_size)
-            cw.pixels = black_frame_same_size
-            cw.show()
+            frame_to_show = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
 
-        # if results.multi_hand_landmarks:
-        #     for hand_landmarks in results.multi_hand_landmarks:
-        #         upscaled_frame = draw_palm_box(frame, hand_landmarks.landmark, output_size=(20, 20), upscale_factor=1)
-        #         # cv2.imwrite(os.path.join(save_dir,f'upscaled_frame_{frame_counter:04}.png'), upscaled_frame)
-        #         # frame_counter += 1
-        #         cv2.imshow("Hand Tracking", upscaled_frame)
-        #         cw.pixels = upscaled_frame
-        #         cw.show()
-        # else:
-        #     # Show a black screen when no landmarks are found
-        #     black_frame_same_size = draw_palm_box(frame, [], output_size=(20, 20), upscale_factor=1)
-        #     cv2.imshow("Hand Tracking", black_frame_same_size)
-        #     cw.pixels = black_frame_same_size
-        #     cw.show()
+        cv2.imshow("Hand Tracking", frame_to_show)
+        cw.pixels = frame_to_show
+        cw.show()
 
         current_time = time.time()
         fps = 1 / (current_time - previous_time)
