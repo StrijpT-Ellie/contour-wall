@@ -23,15 +23,14 @@ def interpolate_color(angle):
         return int(255 * (1 - (angle - 240) / 120)), int(255 * ((angle - 240) / 120)), 0
 
 
-def draw_palm_boxes(frame, hand_landmarks, scale_factor=1, output_size=(20, 20), upscale_factor=5, ellipse_size_factor=3):
+def draw_palm_boxes(frame, hand_landmarks, output_size=(20, 20), upscale_factor=5, ellipse_size_factor=50):
     """
         Function to draw palm boxes on the image.
         :param frame: input image
         :param hand_landmarks: list of hand landmarks
-        :param scale_factor: factor to scale the size of the image
         :param output_size: size of the output image
         :param upscale_factor: factor to upscale the output image
-        :param ellipse_size_factor: factor to upscale the ellipse around the hand
+        :param ellipse_size_factor: factor to upscale the ellipse at point 0 of the hand, base size is 3 wide 3 high
         :return: frame with palm boxes
     """
 
@@ -39,18 +38,23 @@ def draw_palm_boxes(frame, hand_landmarks, scale_factor=1, output_size=(20, 20),
 
     if hand_landmarks:
         for landmarks in hand_landmarks:
-            landmarks_indices = [0, 1, 2, 5, 9, 13, 17]
-            landmarks_coordinates = np.array(
-                [(landmarks[i].x * width, landmarks[i].y * height) for i in landmarks_indices], dtype=np.int32)
 
-            x, y, w, h = cv2.boundingRect(landmarks_coordinates)
-            w *= scale_factor
-            h *= scale_factor
+            landmark_0 = (int(landmarks[0].x * width), int(landmarks[0].y * height))
+
+            base_ellipse_size = (3, 3)
+            scaled_ellipse_size = (
+                int(base_ellipse_size[0] * ellipse_size_factor),
+                int(base_ellipse_size[1] * ellipse_size_factor)
+            )
 
             hue_angle = calculate_hue_angle(landmarks[9].x - landmarks[5].x, landmarks[9].y - landmarks[5].y)
+
             colour = interpolate_color(hue_angle)
 
-            cv2.ellipse(black_frame, ((x + w // 2, y + h // 2), (w * ellipse_size_factor, h * ellipse_size_factor), 0), colour, -1)
+            # Ellipse is drawn around 0 landmark so that it doesn't matter which orientation the hand is in
+            # The colour is still calculated with other points and does matter
+            # With this we hope to improve unseen points
+            cv2.ellipse(black_frame, (landmark_0, scaled_ellipse_size, 0), colour, -1)
 
     black_frame_resized = cv2.resize(black_frame, output_size, interpolation=cv2.INTER_AREA)
     upscaled_frame = cv2.resize(black_frame_resized, (output_size[0] * upscale_factor, output_size[1] * upscale_factor),
