@@ -4,15 +4,15 @@ import random
 import time
 
 # Settings
-width, height = 20, 20
+width, height = 640, 480
 bg_color = (0, 0, 0)
 
 # Initial circle parameters
-circle_radius = 2
+circle_radius = 50
 x = random.randint(circle_radius * 2, width - circle_radius * 2)
 y = random.randint(circle_radius * 2, height - circle_radius * 2)
-x_speed = random.uniform(0.075, 0.2) * random.choice([-1, 1])
-y_speed = random.uniform(0.075, 0.2) * random.choice([-1, 1])
+x_speed = random.uniform(0.5, 0.7) * random.choice([-1, 1])
+y_speed = random.uniform(0.5, 0.7) * random.choice([-1, 1])
 
 
 # cw = ContourWall("COM6")
@@ -34,7 +34,15 @@ while True:
     frame = np.zeros((height, width, 3), dtype=np.uint8)
 
     draw_bouncing_circle(frame, x, y, circle_radius, circle_color)
-    cv2.imshow('DVD Corner', frame)
+
+    output_size = (20, 20)
+    upscale_factor = 50
+    black_frame_resized = cv2.resize(frame, (20, 20), interpolation=cv2.INTER_AREA)
+
+    upscaled_frame = cv2.resize(black_frame_resized, (output_size[0] * upscale_factor, output_size[1] * upscale_factor),
+                                interpolation=cv2.INTER_NEAREST)
+
+    cv2.imshow('DVD Corner', upscaled_frame)
 
     # cw.pixels = frame
     # cw.show()
