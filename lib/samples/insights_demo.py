@@ -23,7 +23,7 @@ def interpolate_color(angle):
         return int(255 * (1 - (angle - 240) / 120)), int(255 * ((angle - 240) / 120)), 0
 
 
-def draw_palm_boxes(frame, hand_landmarks, output_size=(20, 20), upscale_factor=5, ellipse_size_factor=50):
+def draw_palm_boxes(frame, hand_landmarks, output_size=(20, 20), upscale_factor=1, ellipse_size_factor=50):
     """
         Function to draw palm boxes on the image.
         :param frame: input image
@@ -69,7 +69,10 @@ def hand_tracking():
     # cw = ContourWall("COM6")
 
     mp_hands = mp.solutions.hands
-    hands = mp_hands.Hands()
+    # hands = mp_hands.Hands()
+
+    # Can be used to increase the accuracy/speed, might be worth playing around with
+    hands = mp_hands.Hands(min_detection_confidence=0.8, min_tracking_confidence=0.8, max_num_hands=2)
 
     # OpenCV setup
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
