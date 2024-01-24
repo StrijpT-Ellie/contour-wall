@@ -2,7 +2,7 @@ from contourwall import ContourWall
 
 import keyboard  # Install: python3.11 -m pip install keyboard
 
-cw = ContourWall("COM1")
+cw = ContourWall("COM16")
 loc = [0, 0]
 
 cw.pixels[loc[0], loc[1]] = [0, 0, 255]
@@ -21,7 +21,7 @@ def on_arrow_key(event):
         elif event.name == 'right':
             loc[1] += 1
 
-        if loc[0] > 4 or loc[0] < 0 or loc[1] > 4 or loc[1] < 0:
+        if loc[0] > 19 or loc[0] < 0 or loc[1] > 19 or loc[1] < 0:
             loc[0] = 0
             loc[1] = 0
 

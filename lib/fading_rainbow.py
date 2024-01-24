@@ -1,4 +1,3 @@
-import time
 from contourwall import ContourWall
 
 def scroll(pos):
@@ -17,7 +16,7 @@ def scroll(pos):
         color[2] = 1
     return color
 
-cw = ContourWall("COM6")
+cw = ContourWall("COM16")
 
 while True:
     for i in range(255):
