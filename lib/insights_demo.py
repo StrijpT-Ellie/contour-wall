@@ -1,9 +1,10 @@
-from contourwall import ContourWall
+# from contourwall import ContourWall
 
 import cv2
 import mediapipe as mp
 import numpy as np
 import time
+import resting_annimation as ra
 
 width = 640
 height = 480
@@ -62,7 +63,7 @@ def draw_palm_boxes(frame, hand_landmarks, scale_factor=1, output_size=(20, 20),
 def hand_tracking():
     previous_time = 0
 
-    cw = ContourWall("COM6")
+    # cw = ContourWall("COM6")
 
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands()
@@ -71,6 +72,10 @@ def hand_tracking():
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     cap.set(3, width)
     cap.set(4, height)
+
+    start_time = time.time()
+    resting_threshold = 5
+    previous_time = start_time  # Initialize previous_time
 
     while True:
         ret, frame = cap.read()
@@ -86,26 +91,31 @@ def hand_tracking():
         if results.multi_hand_landmarks:
             hand_landmarks_list = [hand.landmark for hand in results.multi_hand_landmarks]
             frame_to_show = draw_palm_boxes(frame, hand_landmarks_list, output_size=(20, 20), upscale_factor=1)
+            start_time = time.time()
         else:
-            frame_to_show = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
+            elapsed_time = time.time() - start_time
+            if elapsed_time >= resting_threshold:
+                frame_to_show = ra.bouncing_annimation()
+            else:
+                frame_to_show = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
 
         cv2.imshow("Hand Tracking", frame_to_show)
-        cw.pixels = frame_to_show
-        cw.show()
+        # cw.pixels = frame_to_show
+        # cw.show()
 
-        current_time = time.time()
-        fps = 1 / (current_time - previous_time)
-        previous_time = current_time
-
-        cv2.putText(
-            frame,
-            str(int(fps)),
-            (50, 100),
-            cv2.FONT_HERSHEY_PLAIN,
-            3,
-            (0, 255, 0),
-            3,
-        )
+        # current_time = time.time()
+        # fps = 1 / (current_time - previous_time)
+        # previous_time = current_time
+        #
+        # cv2.putText(
+        #     frame,
+        #     str(int(fps)),
+        #     (50, 100),
+        #     cv2.FONT_HERSHEY_PLAIN,
+        #     3,
+        #     (0, 255, 0),
+        #     3,
+        # )
 
         cv2.imshow("Hand", frame)
 

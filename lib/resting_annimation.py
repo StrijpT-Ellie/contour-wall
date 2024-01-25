@@ -3,7 +3,7 @@ import numpy as np
 import random
 import time
 
-from contourwall import ContourWall
+# from contourwall import ContourWall
 
 # Settings
 width, height = 100, 100
@@ -16,7 +16,7 @@ circle_base_speed = 2
 circle_speed = [random.randint(-circle_base_speed, circle_base_speed), random.randint(-circle_base_speed, circle_base_speed)]
 angle_factor = 0.2
 
-cw = ContourWall("COM6")
+# cw = ContourWall("COM6")
 
 def get_random_color():
     # Define a list of 20 vibrant color tuples (in RGB format)
@@ -53,6 +53,7 @@ circle_color = get_random_color()
 def draw_circle(frame, x, y, radius, color):
     cv2.circle(frame, (int(x), int(y)), radius, color, -1)
 
+
 def update_circle():
     global circle_position, circle_speed, circle_color
 
@@ -70,7 +71,8 @@ def update_circle():
         circle_speed[0] += random.uniform(-angle_factor, angle_factor)
         circle_color = get_random_color()
 
-while True:
+
+def bouncing_annimation():
     frame = np.zeros((height, width, 3), dtype=np.uint8)
 
     # Update and draw the circle
@@ -81,18 +83,47 @@ while True:
     output_size = (20, 20)
     upscale_factor = 1
     black_frame_resized = cv2.resize(frame, output_size, interpolation=cv2.INTER_AREA)
-    upscaled_frame = cv2.resize(black_frame_resized, (output_size[0] * upscale_factor, output_size[1] * upscale_factor), interpolation=cv2.INTER_NEAREST)
+    upscaled_frame = cv2.resize(black_frame_resized, (output_size[0] * upscale_factor, output_size[1] * upscale_factor),
+                                interpolation=cv2.INTER_NEAREST)
 
-    cw.pixels = upscaled_frame
-    cw.show()
+    # cw.pixels = upscaled_frame
+    # cw.show()
 
     # Display the frame
-    cv2.imshow('Bouncing Circle', upscaled_frame)
+    # cv2.imshow('Bouncing Circle', upscaled_frame)
+    return upscaled_frame
 
     # Wait for a short time to control the animation speed
     time.sleep(0.01)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
+
+
+# while True:
+#     frame = np.zeros((height, width, 3), dtype=np.uint8)
+#
+#     # Update and draw the circle
+#     update_circle()
+#     draw_circle(frame, circle_position[0], circle_position[1], circle_radius, circle_color)
+#
+#     # Resize for pixelated effect
+#     output_size = (20, 20)
+#     upscale_factor = 1
+#     black_frame_resized = cv2.resize(frame, output_size, interpolation=cv2.INTER_AREA)
+#     upscaled_frame = cv2.resize(black_frame_resized, (output_size[0] * upscale_factor, output_size[1] * upscale_factor), interpolation=cv2.INTER_NEAREST)
+#
+#     # cw.pixels = upscaled_frame
+#     # cw.show()
+#
+#     # Display the frame
+#     # cv2.imshow('Bouncing Circle', upscaled_frame)
+#     return upscaled_frame
+#
+#     # Wait for a short time to control the animation speed
+#     time.sleep(0.01)
+#
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
 
 cv2.destroyAllWindows()
