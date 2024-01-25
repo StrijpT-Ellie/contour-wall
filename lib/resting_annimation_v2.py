@@ -14,7 +14,7 @@ angle_factor = 0.2
 
 # Function to update ball position and speed
 def update_ball():
-    global ball_pos, ball_speed, ball_color
+    ball_pos, ball_speed, ball_color
 
     # Update position
     ball_pos[0] += ball_speed[0]

@@ -62,7 +62,7 @@ def draw_palm_boxes(frame, hand_landmarks, scale_factor=1, output_size=(20, 20),
 def hand_tracking():
     previous_time = 0
 
-    # cw = ContourWall("COM6")
+    cw = ContourWall("COM6")
 
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands()
@@ -85,13 +85,13 @@ def hand_tracking():
 
         if results.multi_hand_landmarks:
             hand_landmarks_list = [hand.landmark for hand in results.multi_hand_landmarks]
-            frame_to_show = draw_palm_boxes(frame, hand_landmarks_list, output_size=(20, 20), upscale_factor=50)
+            frame_to_show = draw_palm_boxes(frame, hand_landmarks_list, output_size=(20, 20), upscale_factor=1)
         else:
-            frame_to_show = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=50)
+            frame_to_show = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
 
         cv2.imshow("Hand Tracking", frame_to_show)
-        # cw.pixels = frame_to_show
-        # cw.show()
+        cw.pixels = frame_to_show
+        cw.show()
 
         current_time = time.time()
         fps = 1 / (current_time - previous_time)
