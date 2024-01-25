@@ -2,7 +2,12 @@ import cv2
 import numpy as np
 import time
 
-from contourwall import ContourWall
+# from contourwall import ContourWall
+
+# Settings
+width, height = 20, 20
+wave_speed = 10  # Speed of hue shift
+wave_shift = 0
 
 def hue_to_rgb(hue):
     """ Convert hue value to RGB color """
@@ -31,35 +36,37 @@ def create_rainbow_wave(frame, wave_shift):
             # Create a wave of hues across the image
             hue = (x * 360 / width + wave_shift) % 360
             frame[y, x] = hue_to_rgb(hue)
+
+    wave_shift = (wave_shift + wave_speed) % 360
     return frame
 
-# Settings
-width, height = 20, 20
-wave_speed = 10  # Speed of hue shift
+
 
 # Create a window
-cv2.namedWindow('Rainbow Wave')
+# cv2.namedWindow('Rainbow Wave')
 
-wave_shift = 0
+# cw = ContourWall("COM6")
 
-cw = ContourWall("COM6")
+def wave_rainbow():
+    global wave_shift
 
-while True:
     frame = np.zeros((height, width, 3), dtype=np.uint8)
     frame = create_rainbow_wave(frame, wave_shift)
 
     # Display the frame
-    cv2.imshow('Rainbow Wave', frame)
+    # cv2.imshow('Rainbow Wave', frame)
 
-    cw.pixels = frame
-    cw.show()
+    # cw.pixels = frame
+    # cw.show()
 
     # Update wave shift
     wave_shift = (wave_shift + wave_speed) % 360
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+    return frame
 
-    time.sleep(0.01)
+    # if cv2.waitKey(1) & 0xFF == ord('q'):
+    #     break
+    #
+    # time.sleep(0.01)
 
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()

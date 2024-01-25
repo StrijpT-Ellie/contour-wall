@@ -1,4 +1,4 @@
-from contourwall import ContourWall
+# from contourwall import ContourWall
 
 import cv2
 import mediapipe as mp
@@ -64,7 +64,7 @@ def draw_palm_boxes(frame, hand_landmarks, scale_factor=1, output_size=(20, 20),
 def hand_tracking():
     previous_time = 0
 
-    cw = ContourWall("COM6")
+    # cw = ContourWall("COM6")
 
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands()
@@ -96,14 +96,14 @@ def hand_tracking():
         else:
             elapsed_time = time.time() - start_time
             if elapsed_time >= resting_threshold:
-                # frame_to_show = ra.bouncing_annimation()
+                # frame_to_show = ra.bouncing_animation()
                 frame_to_show = wr.wave_rainbow()
             else:
                 frame_to_show = draw_palm_boxes(frame, [], output_size=(20, 20), upscale_factor=1)
 
         cv2.imshow("Hand Tracking", frame_to_show)
-        cw.pixels = frame_to_show
-        cw.show()
+        # cw.pixels = frame_to_show
+        # cw.show()
 
         # current_time = time.time()
         # fps = 1 / (current_time - previous_time)

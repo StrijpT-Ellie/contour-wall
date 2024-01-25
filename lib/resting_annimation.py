@@ -75,7 +75,8 @@ def update_circle():
         circle_speed[0] = np.clip(circle_speed[0] + random.uniform(-angle_factor, angle_factor), -circle_base_speed, circle_base_speed)
         circle_color = get_random_color()
 
-def bouncing_annimation():
+
+def bouncing_animation():
     frame = np.zeros((height, width, 3), dtype=np.uint8)
 
     # Update and draw the circle
