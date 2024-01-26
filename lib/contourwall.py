@@ -24,6 +24,12 @@ class ContourWall:
 
         self.__generate_index_conversion_matrix()
 
+    def __del__(self):
+        """
+        Destruction of the ContourWall class object. The destructor closes the serial COM-port
+        """
+        self.__serial.close()
+
     def show(self, force_frame_time: bool=False) -> int:
         """ 
         Writes the pixel colors to the tile. Make sure that self.pixels is in the colorsp
@@ -36,9 +42,10 @@ class ContourWall:
         Returns the actual frametime between this and the previous frame in milliseconds
         """
         buffer = [0] * self.__tx_buffer_size 
-        # Using a Numpy array with one element to have an 8 bit uint for the CRC. 
-        # Python (to my knowledge) does not have such a type
-        crc = np.array([0], dtype=np.uint8)
+        
+        # The CRC is quite simple. The sum the whole buffer into an 8-bit integer (byte).
+        # To simulate an 8-bit integer with, Python's BIG int is used and % 256 to get the same value as an byte with overflow.
+        crc = 0
 
         for (x, row) in enumerate(self.pixels):
             for (y, pixel) in enumerate(row):
@@ -47,8 +54,8 @@ class ContourWall:
                 buffer[self.__index_converter[x, y]*3+2] = pixel[2]
                 crc[0] += pixel[0] + pixel[1] + pixel[2]
         
-        # Adding checksum to serial transmit buffer
-        buffer.append(crc[0])
+        # Adding checksum to serial transmit buffer,after modding is to make it the same as if it was an 8-bit int
+        buffer.append(crc % 256)
         
         # Sleeping the leftover frametime time, to keep the frametimes consistant
         if force_frame_time:

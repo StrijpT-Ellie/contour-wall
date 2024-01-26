@@ -34,8 +34,6 @@ impl ContourWall {
         }
     }
 
-    fn show()
-
     fn show(&mut self, force_frame_time: bool) -> Result<u128, ()> {
         let mut buffer = vec![0; self.tx_buffer_size];
         let mut crc: u8 = 0;
