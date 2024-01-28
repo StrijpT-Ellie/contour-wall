@@ -1,8 +1,11 @@
 #include <stdint.h>
 #include <FastLED.h>
+#include <EEPROM.h>
 
-#define LED_PIN     48  // Define the pin to which the LED is connected
+#define LED_PIN     13  // Define the pin to which the LED is connected
+#define BUILTIN_LED 2
 #define NUM_LEDS    400  // Number of LEDs (1 for the built-in RGB LED on ESP32-S3)
+#define EEPROM_SIZE 1
 #define RX_BUFFER_SIZE 1300 // 256 * 5 + 1 = 1281 rounded up.
 // #define RX_BUFFER_SIZE NUM_LEDS * 3 + 1
 
@@ -18,6 +21,7 @@ CRGB leds[NUM_LEDS];
 CRGB leds_old[NUM_LEDS];
 
 uint8_t buffer[RX_BUFFER_SIZE];
+uint8_t tile_identifier = 0;
 
 void empty_rx_buffer() {
   while (Serial.available() > 0) {
@@ -133,34 +137,58 @@ void command_3_update_specific() {
   finalize_command(STATUS_CODE_OK);
 }
 
+void command_4_tile_identifier() {
+  Serial.write(tile_identifier);
+
+  // If tile_identifier is 0, then there is an error with the EEPROM, an identifier will never be 0
+  if(tile_identifier) {
+    finalize_command(STATUS_CODE_OK);
+  } else {
+    finalize_command(STATUS_CODE_ERROR);
+  }
+}
+
 void setup() {
   Serial.begin(921600);
   Serial.setTimeout(10); // It takes 1.6ms to transfer 12000 bites over serial (921600), at 100% efficiency.
 
-  FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);  
+  pinMode(BUILTIN_LED, OUTPUT);
+  digitalWrite(BUILTIN_LED, LOW);
+
+  if(EEPROM.begin(EEPROM_SIZE)) {
+    tile_identifier = EEPROM.read(0);
+  } 
+
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);  
 }
 
 void loop() {
   int data = Serial.read();
 
-  switch(data) {
-    case 0:
-      command_0_show_pixels();
-      break;
-    case 1:
-      command_1_clear_all();
-      break;
-    case 2:
-      command_2_update_all();
-      break;
-    case 3:
-      command_3_update_specific();
-      break;
-    case -1:
-      // This means there is no incomming serial data, do nothing.
-      break;
-    default:
-      Serial.write(STATUS_CODE_UNKNOWN_COMMAND);
-      break;      
+  if(data >= 0) {
+    digitalWrite(BUILTIN_LED, HIGH);
+
+    switch(data) {
+      case 0:
+        command_0_show_pixels();
+        break;
+      case 1:
+        command_1_clear_all();
+        break;
+      case 2:
+        command_2_update_all();
+        break;
+      case 3:
+        command_3_update_specific();
+        break;
+      case 4:
+        command_4_tile_identifier();
+        break;
+      default:
+        Serial.write(STATUS_CODE_UNKNOWN_COMMAND);
+        break;      
+    }
+
+    digitalWrite(BUILTIN_LED, LOW);
   }
 }
