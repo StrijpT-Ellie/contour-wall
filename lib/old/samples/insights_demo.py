@@ -4,7 +4,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-import resting_annimation as ra
 import wave_rainbow as wr
 
 width = 640
