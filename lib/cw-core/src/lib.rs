@@ -48,8 +48,8 @@ pub extern "C" fn command_0_show(this: &mut ContourWallCore) -> StatusCodeAlias 
     }
 
     // Read response of tile 
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -64,8 +64,8 @@ pub extern "C" fn command_1_solid_color(this: &mut ContourWallCore, red: u8, gre
     }
 
     // Read response of tile 
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -94,8 +94,8 @@ pub extern "C" fn command_2_update_all(this: &mut ContourWallCore, frame_buffer_
     }
 
     // Read response of tile 
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -115,8 +115,8 @@ pub extern "C" fn command_3_update_specific_led(this: &mut ContourWallCore, fram
     }
     
     // Reading the next
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -139,8 +139,8 @@ pub extern "C" fn command_3_update_specific_led(this: &mut ContourWallCore, fram
         return StatusCode::ErrorInternal.as_u8()
     }
 
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -153,8 +153,8 @@ pub extern "C" fn command_4_get_tile_identifier(this: &mut ContourWallCore) -> u
         return StatusCode::ErrorInternal.as_u8() as u16;
     }
     
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[1]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[1]).is_none() {
         return StatusCode::ErrorInternal.as_u8() as u16;
     }
 
@@ -167,8 +167,8 @@ pub extern "C" fn command_5_set_tile_identifier(this: &mut ContourWallCore,  ide
         return StatusCode::ErrorInternal.as_u8()
     }
 
-    let mut read_buf: Vec<u8> = vec![0; 1];
-    if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    let read_buf = &mut[0; 1];
+    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -198,7 +198,7 @@ pub extern "C" fn drop(this: *mut ContourWallCore) {
 
 // pub fn expect(this: &mut ContourWallCore, mut status_code: &mut StatusCode) -> bool {
 //     let mut read_buf: Vec<u8> = vec![0; 1];
-//     if serial_read(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+//     if serial_read_slice(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
 //         status_code = &mut StatusCode::ErrorInternal;
 //         return false;
 //     }
@@ -213,14 +213,15 @@ pub extern "C" fn drop(this: *mut ContourWallCore) {
 //     }
 // }
 
-fn serial_read(serial: SerialPointer, buffer: &mut Vec<u8>) -> Result<(), ()> {
+fn serial_read_slice(serial: SerialPointer, buffer: &mut[u8]) -> Result<(), ()> {
     let serial = unsafe {  &mut *serial };
     
     let start = millis_since_epoch();
-    while serial.bytes_to_read().expect("Cannot get bytes from serial read buffer") < buffer.capacity() as u32 {
-        if (millis_since_epoch() - start) > 30 {
+    let time_to_receive_ms = 30;
+    while serial.bytes_to_read().expect("Cannot get bytes from serial read buffer") < buffer.len() as u32 {
+        if (millis_since_epoch() - start) > time_to_receive_ms {
+            eprintln!("[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time", serial.bytes_to_read().unwrap(), buffer.len(), time_to_receive_ms);
             let _res = (*serial).clear(serialport::ClearBuffer::Input);
-            eprintln!("[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time", serial.bytes_to_read().unwrap(), buffer.capacity(), 30);
             return Err(());
         }
     } 
