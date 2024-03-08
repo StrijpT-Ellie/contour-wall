@@ -1,4 +1,3 @@
-use std::array::from_mut;
 use std::ffi::{c_char, CStr};
 use std::time::{Duration, SystemTime};
 use serialport::SerialPort;
@@ -12,9 +11,12 @@ pub use status_code::StatusCode;
 #[repr(C)]
 #[derive(Debug)]
 pub struct ContourWallCore {
-    pub frame_time: u64,
-    serial: SerialPointer,
-    last_serial_write_time: u64,
+    /// The minimum time between between frames pushed to a tile. Default values is 33ms (33fps)
+    pub frame_time: u64,    
+    /// Last time since frame as pushed to tile. Stored as amount of milliseconds since Linux EPOCH
+    pub last_serial_write_time: u64, 
+    /// The serial COM port connected to a ESP32 (tile)
+    pub serial: SerialPointer,
 }
 
 #[no_mangle]
@@ -47,9 +49,11 @@ pub extern "C" fn command_0_show(this: &mut ContourWallCore) -> StatusCodeAlias 
         return StatusCode::ErrorInternal.as_u8()
     }
 
+    this.last_serial_write_time = millis_since_epoch();
+
     // Read response of tile 
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -65,7 +69,7 @@ pub extern "C" fn command_1_solid_color(this: &mut ContourWallCore, red: u8, gre
 
     // Read response of tile 
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -95,7 +99,7 @@ pub extern "C" fn command_2_update_all(this: &mut ContourWallCore, frame_buffer_
 
     // Read response of tile 
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -116,7 +120,7 @@ pub extern "C" fn command_3_update_specific_led(this: &mut ContourWallCore, fram
     
     // Reading the next
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -140,7 +144,7 @@ pub extern "C" fn command_3_update_specific_led(this: &mut ContourWallCore, fram
     }
 
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -154,7 +158,7 @@ pub extern "C" fn command_4_get_tile_identifier(this: &mut ContourWallCore) -> u
     }
     
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[1]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[1]).is_none() {
         return StatusCode::ErrorInternal.as_u8() as u16;
     }
 
@@ -168,7 +172,7 @@ pub extern "C" fn command_5_set_tile_identifier(this: &mut ContourWallCore,  ide
     }
 
     let read_buf = &mut[0; 1];
-    if serial_read_slice(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
         return StatusCode::ErrorInternal.as_u8()
     }
 
@@ -196,24 +200,7 @@ pub extern "C" fn drop(this: *mut ContourWallCore) {
     }
 }
 
-// pub fn expect(this: &mut ContourWallCore, mut status_code: &mut StatusCode) -> bool {
-//     let mut read_buf: Vec<u8> = vec![0; 1];
-//     if serial_read_slice(this.serial, &mut read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-//         status_code = &mut StatusCode::ErrorInternal;
-//         return false;
-//     }
-
-//     // Processing the respose from the tile
-//     let mut code = &mut StatusCode::new(read_buf[0]).unwrap();
-//     status_code = code;
-//     if code != status_code {
-//          false
-//     } else {
-//         true
-//     }
-// }
-
-fn serial_read_slice(serial: SerialPointer, buffer: &mut[u8]) -> Result<(), ()> {
+fn serial_read(serial: SerialPointer, buffer: &mut[u8]) -> Result<(), ()> {
     let serial = unsafe {  &mut *serial };
     
     let start = millis_since_epoch();
@@ -261,7 +248,7 @@ mod tests {
 
     #[test]
     fn update_specific() {
-        let framebuffer: Vec<u8> = vec![0, 4, 0, 255, 0, 0, 10, 0, 100, 100, 1, 100, 255, 0, 255];
+        let framebuffer = &mut[0, 4, 0, 255, 0, 0, 10, 0, 100, 100, 1, 100, 255, 0, 255];
         let com_string: *const c_char = CString::new("COM16").expect("CString conversion failed").into_raw();
 
         let mut cw = new(com_string, 921_600);
@@ -274,7 +261,7 @@ mod tests {
 
     #[test]
     fn update_all() {
-        let mut framebuffer: Vec<u8> = vec![100; 1200];
+        let framebuffer = &mut[100; 1200];
 
         let com_string: *const c_char = CString::new("COM16").expect("CString conversion failed").into_raw();
 
