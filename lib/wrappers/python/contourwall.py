@@ -28,7 +28,7 @@ class ContourWall:
         self._command_1_solid_color.restype = c_uint8
 
         self._command_2_update_all = self.__lib.command_2_update_all
-        self._command_2_update_all.argtypes = [ctypes.POINTER(ContourWallCore), ctypes.POINTER(c_uint8), c_uint32]
+        self._command_2_update_all.argtypes = [ctypes.POINTER(ContourWallCore), ctypes.POINTER(c_uint8)]
         self._command_2_update_all.restype = c_uint8
 
         self._command_3_update_specific_led = self.__lib.command_3_update_specific_led
@@ -53,10 +53,14 @@ class ContourWall:
         self._drop = self.__lib.drop
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
 
-        if any(port.device == COMport for port in serial.tools.list_ports.comports()):
-            self._cw_core = self._new(COMport.encode(), baud_rate)
-        else:
-            raise FileNotFoundError(f"COM port \"{COMport}\", does not exist")
+        self._cw_core = self._new(COMport.encode(), baud_rate)
+        print(self._cw_core.serial)
+
+        # if any(port.device == COMport for port in serial.tools.list_ports.comports()):
+        #     self._cw_core = self._new(COMport.encode(), baud_rate)
+        #     print(self._cw_core.serial)
+        # else:
+        #     raise FileNotFoundError(f"COM port \"{COMport}\", does not exist")
 
         self.pixels: np.array = np.zeros((20, 20, 3), dtype=np.uint8)
         self.__index_converter: np.array = np.zeros((20, 20), dtype=np.uint16)
@@ -73,7 +77,7 @@ class ContourWall:
 
         ptr = ctypes.cast(buffer.tobytes(), ctypes.POINTER(ctypes.c_uint8))
 
-        res = self._command_2_update_all(ctypes.byref(self._cw_core), ptr, 1200) 
+        res = self._command_2_update_all(ctypes.byref(self._cw_core), ptr) 
         if res != 100:
             return res
 
