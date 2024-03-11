@@ -39,10 +39,6 @@ class ContourWall:
         self._command_4_get_tile_identifier.argtypes = [ctypes.POINTER(ContourWallCore)]
         self._command_4_get_tile_identifier.restype = c_uint16
 
-        self._command_5_set_tile_identifier = self.__lib.command_5_set_tile_identifier
-        self._command_5_set_tile_identifier.argtypes = [ctypes.POINTER(ContourWallCore), c_uint8]
-        self._command_5_set_tile_identifier.restype = c_uint8
-
         self._get_frame_time = self.__lib.get_frame_time
         self._get_frame_time.argtypes = [ctypes.POINTER(ContourWallCore), c_uint64]
                 
@@ -66,6 +62,7 @@ class ContourWall:
         self.__index_converter: np.array = np.zeros((20, 20), dtype=np.uint16)
         self.__generate_index_conversion_matrix()
         self.pushed_frames: int = 0
+
     def show(self):
         buffer = np.zeros(1200, dtype=np.uint8)
 
