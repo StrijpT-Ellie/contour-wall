@@ -1,33 +1,6 @@
-from contourwall import ContourWall
+from contourwall import ContourWall, hsv_to_rgb
 import time
 import sys
-
-def hsv_to_rgb(h, s, v):
-    h /= 255
-    s /= 255
-    v /= 255
-
-    if s == 0.0:
-        return int(v * 255), int(v * 255), int(v * 255)
-
-    i = int(h * 6.)  # segment number (0 to 5)
-    f = (h * 6.) - i  # fractional part of h
-    p = v * (1. - s)
-    q = v * (1. - s * f)
-    t = v * (1. - s * (1. - f))
-
-    if i == 0:
-        return int(v * 255), int(t * 255), int(p * 255)
-    elif i == 1:
-        return int(q * 255), int(v * 255), int(p * 255)
-    elif i == 2:
-        return int(p * 255), int(v * 255), int(t * 255)
-    elif i == 3:
-        return int(p * 255), int(q * 255), int(v * 255)
-    elif i == 4:
-        return int(t * 255), int(p * 255), int(v * 255)
-    else:
-        return int(v * 255), int(p * 255), int(q * 255)
 
 def test_flash_all_colors():
     # Set all pixels to RED
@@ -78,6 +51,7 @@ def test_fade_to_white():
         time.sleep(0.025)
     cw.pixels[:] = 0, 0, 0
     cw.show()
+    time.sleep(0.01)
 
 def test_fade_colors():
     # Slowly fade over all HSV colors
@@ -87,6 +61,7 @@ def test_fade_colors():
         time.sleep(0.025)
     cw.pixels[:] = 0, 0, 0
     cw.show()
+    time.sleep(0.01)
 
 def test_moving_lines():
     for _ in range(2):
@@ -122,6 +97,7 @@ def test_moving_lines():
 
     cw.pixels[:] = 0, 0, 0
     cw.show()
+    time.sleep(0.01)
 
 def test_turning_pixels_on_zigzag():
     # Turning all pixels white row by row in a zigzag
@@ -140,7 +116,7 @@ def test_turning_pixels_on_zigzag():
 
 if __name__ == "__main__":
     global cw 
-    cw = ContourWall("COM16")
+    cw = ContourWall("COM5", baud_rate=2_000_000)
 
     args = sys.argv[1:]
 
@@ -163,8 +139,10 @@ if __name__ == "__main__":
             else:
                 print(f"[TEST ERROR] No test named: \"{arg}\"")
     else:
+        t1 = time.time_ns()
         for test in tests.values():
             test()
+        print("Time elapsed: ", (time.time_ns() - t1 )/1_000_000)
 
     print("Pushed frames: ", cw.pushed_frames)
     time.sleep(1)
