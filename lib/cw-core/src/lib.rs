@@ -357,12 +357,26 @@ pub extern "C" fn command_4_get_tile_identifier(this: &mut ContourWallCore) -> u
         return StatusCode::ErrorInternal.as_u8() as u16;
     }
     
-    let read_buf = &mut[0; 1];
+    let read_buf = &mut[0; 8];
     if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[1]).is_none() {
         return StatusCode::ErrorInternal.as_u8() as u16;
     }
+    
+    let status_code = if StatusCode::new(read_buf[7]).is_none() {
+        StatusCode::ErrorInternal.as_u8()
+    } else {
+        read_buf[7]
+    };
 
-    ((read_buf[0] as u16) << 8) + read_buf[1] as u16
+    let magic_numbers = read_buf[0..5].iter().map(|&x| x as char).collect::<String>();
+
+    if magic_numbers != String::from("Ellie") {
+        StatusCode::NotACWPort.as_u8() as u16 // This COM port is not part of the ContourWall, because the magic numbers are not ELLIE
+    } else if read_buf[5] != read_buf[6] {
+        StatusCode::NonMatchingCRC.as_u8() as u16
+    } else {
+        ((read_buf[6] as u16) << 8) + (status_code as u16)
+    } 
 }
 
 /// Executes `command_5_set_tile_identifier` of the protocol. Sets a new tile identifier in the EEPROM of the ESP32
@@ -385,6 +399,20 @@ pub extern "C" fn command_5_set_tile_identifier(this: &mut ContourWallCore,  ide
     }
 
     read_buf[0]
+}
+
+#[no_mangle]
+pub extern "C" fn verify_if_tile(this: &mut ContourWallCore) -> bool {
+    let res = command_4_get_tile_identifier(this);
+    let res = StatusCode::new((res & 256) as u8).unwrap();
+    match res {
+        StatusCode::Error | StatusCode::TooSlow | StatusCode::NonMatchingCRC | StatusCode::ErrorInternal | StatusCode::NotACWPort => {
+            StatusCode::new((command_4_get_tile_identifier(this) & 256) as u8).unwrap() == StatusCode::Ok
+        },
+        StatusCode::UnknownCommand => unreachable!("[CW CORE ERROR] verify_if_tile executed a command which is unknown"),
+        StatusCode::Next | StatusCode::Reset => unreachable!("[CW CORE ERROR] verify_if_tile, should never receive a {}", res),
+        StatusCode::Ok => true,
+    }
 }
 
 /// Sets the frame_time field of the ContourWallCore struct in milliseconds. 

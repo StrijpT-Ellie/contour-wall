@@ -159,6 +159,8 @@ void command_3_update_specific() {
 
 void command_4_get_tile_identifier() {
   uint8_t tile_identifier = EEPROM.read(EEPROM_IDENT_PTR);
+  Serial.write("Ellie");
+  Serial.write(tile_identifier);
   Serial.write(tile_identifier);
 
   // If tile_identifier is 0, then there is an error with the EEPROM, an identifier will never be 0
