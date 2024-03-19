@@ -2,6 +2,7 @@ import numpy as np
 import serial.tools.list_ports
 import ctypes
 from ctypes import c_void_p, c_char_p, c_uint32, c_uint8, c_uint16, c_uint64
+from sys import platform
 
 class ContourWallCore(ctypes.Structure):
     _fields_ = [
@@ -11,9 +12,14 @@ class ContourWallCore(ctypes.Structure):
     ]
 
 class ContourWall:
-    def __init__(self, COMport: str, baud_rate=921_600):
+    def __init__(self, COMport: str, baud_rate=2_000_000):
         # Load the Rust shared object
-        self.__lib = ctypes.CDLL("./cw_core.dll")
+        if platform == "win32":
+            self.__lib = ctypes.CDLL("./cw_core.dll")
+        elif platform in ["darwin", "linux"]:
+            self.__lib = ctypes.CDLL("./cw_core.so")
+        else:
+            raise Exception(f"'{platform}' is not a supported operating system")
 
         self._new = self.__lib.new
         self._new.argtypes = [c_char_p, c_uint32]
@@ -52,18 +58,18 @@ class ContourWall:
         self._cw_core = self._new(COMport.encode(), baud_rate)
         print(self._cw_core.serial)
 
-        # if any(port.device == COMport for port in serial.tools.list_ports.comports()):
-        #     self._cw_core = self._new(COMport.encode(), baud_rate)
-        #     print(self._cw_core.serial)
-        # else:
-        #     raise FileNotFoundError(f"COM port \"{COMport}\", does not exist")
+        if any(port.device == COMport for port in serial.tools.list_ports.comports()):
+            self._cw_core = self._new(COMport.encode(), baud_rate)
+            print(self._cw_core.serial)
+        else:
+            raise Exception(f"COM port \"{COMport}\", does not exist")
 
         self.pixels: np.array = np.zeros((20, 20, 3), dtype=np.uint8)
         self.__index_converter: np.array = np.zeros((20, 20), dtype=np.uint16)
         self.__generate_index_conversion_matrix()
         self.pushed_frames: int = 0
 
-    def show(self):
+    def show(self) -> int:
         buffer = np.zeros(1200, dtype=np.uint8)
 
         for (x, row) in enumerate(self.pixels):
@@ -104,3 +110,30 @@ class ContourWall:
             for index in range(row_start_value, row_start_value+100, 5):
                 self.__index_converter[x, y] = index
                 y += 1
+
+def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
+    h /= 255
+    s /= 255
+    v /= 255
+
+    if s == 0.0:
+        return int(v * 255), int(v * 255), int(v * 255)
+
+    i = int(h * 6.)  # segment number (0 to 5)
+    f = (h * 6.) - i  # fractional part of h
+    p = v * (1. - s)
+    q = v * (1. - s * f)
+    t = v * (1. - s * (1. - f))
+
+    if i == 0:
+        return int(v * 255), int(t * 255), int(p * 255)
+    elif i == 1:
+        return int(q * 255), int(v * 255), int(p * 255)
+    elif i == 2:
+        return int(p * 255), int(v * 255), int(t * 255)
+    elif i == 3:
+        return int(p * 255), int(q * 255), int(v * 255)
+    elif i == 4:
+        return int(t * 255), int(p * 255), int(v * 255)
+    else:
+        return int(v * 255), int(p * 255), int(q * 255)

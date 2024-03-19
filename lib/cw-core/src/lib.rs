@@ -146,12 +146,14 @@ pub extern "C" fn command_0_show(this: &mut ContourWallCore) -> StatusCodeAlias 
     this.last_serial_write_time = millis_since_epoch();
 
     // Read response of tile 
-    let read_buf = &mut[0; 1];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
+    // let read_buf = &mut[0; 1];
+    // if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
+    //     return StatusCode::ErrorInternal.as_u8()
+    // }
 
-    read_buf[0]
+    // read_buf[0]
+
+    StatusCode::Ok.as_u8()
 }
 
 /// Executes `command_1_solid_color` of the protocol, which sets *all* pixels on a tile to one specific color.
