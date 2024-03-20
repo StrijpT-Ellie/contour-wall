@@ -23,7 +23,7 @@ impl StatusCode {
             100 => Some(StatusCode::Ok),
             101 => Some(StatusCode::Next),
             255 => Some(StatusCode::Reset),
-            _ => None
+            _ => None,
         }
     }
 
