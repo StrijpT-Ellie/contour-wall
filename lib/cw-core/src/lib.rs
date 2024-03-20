@@ -74,6 +74,8 @@ pub struct ContourWallCore {
     pub last_serial_write_time: u64, 
     /// The serial COM port connected to a ESP32 (tile)
     pub serial: SerialPointerAlias,
+    /// 
+    index_converter_vector: [u16; 1200],
 } 
 
 /// Creates a new instance of the ContourWallCore struct.
@@ -104,10 +106,13 @@ pub extern "C" fn new(com_port: *const c_char, baudrate: u32) -> ContourWallCore
         .open()
         .expect(format!("[CW CORE ERROR] Could not open COM port: {}", str_ptr_to_string(com_port)).as_str());
 
+    let index_converter_vector = generate_index_conversion_matrix();
+
     ContourWallCore {
         serial: Box::into_raw(Box::new(serial)) as SerialPointerAlias,
         frame_time: 33,
         last_serial_write_time: millis_since_epoch(),
+        index_converter_vector
     }
 }
 
@@ -469,6 +474,39 @@ fn write_to_serial_async(serial: SerialPointerAlias, bytes: &[u8]) -> Result<usi
 
 fn write_to_serial(serial: SerialPointerAlias, bytes: &[u8]) -> Result<(), std::io::Error> {
     unsafe { (*serial).write_all(bytes) }
+}
+
+fn generate_index_conversion_matrix() -> [u16; 1200] {
+    let mut matrix: [[u16; 20]; 20] = [[0; 20]; 20];
+    for x in 0..20 {
+        let mut row_start_value = x as u16;
+        if x >= 15 {
+            row_start_value = 300 + x as u16 - 15;
+        } else if x >= 10 {
+            row_start_value = 200 + x as u16 - 10;
+        } else if x >= 5 {
+            row_start_value = 100 + x as u16 - 5;
+        }
+
+        let mut y = 0;
+        for index in (row_start_value..row_start_value + 100).step_by(5) {
+            matrix[x][y] = index;
+            y += 1;
+        }
+    }
+
+    let mut result: [u16; 1200] = [0; 1200];
+    let mut index = 0;
+    for column in matrix.iter() {
+        for &element in column.iter() {
+            result[index] = element;
+            result[index+1] = element + 1;
+            result[index+2] = element + 2;
+            index += 3;
+        }
+    }
+
+    result
 }
 
 fn millis_since_epoch() -> u64 {
