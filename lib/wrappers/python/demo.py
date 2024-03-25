@@ -116,7 +116,11 @@ def test_turning_pixels_on_zigzag():
 
 if __name__ == "__main__":
     global cw 
-    cw = ContourWall("COM5", baud_rate=2_000_000)
+    # Example for Windows
+    # cw = ContourWall("COM0", baud_rate=2_000_000)
+    # Example for Unix
+    # cw = ContourWall("/dev/ttyUSB0", baud_rate=2_000_000)
+    cw = ContourWall("YOUR COM PORT", baud_rate=2_000_000)
 
     args = sys.argv[1:]
 
