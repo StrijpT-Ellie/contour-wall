@@ -159,7 +159,6 @@ void command_3_update_specific() {
 
 void command_4_get_tile_identifier() {
   uint8_t tile_identifier = EEPROM.read(EEPROM_IDENT_PTR);
-  Serial.write("Ellie");
   Serial.write(tile_identifier);
   Serial.write(tile_identifier);
 
@@ -188,6 +187,10 @@ void command_5_set_tile_identifier() {
   } else {
     finalize_command(STATUS_CODE_ERROR);
   }
+}
+
+void command_6_magic_numbers() {
+  Serial.write("Ellie");
 }
 
 void setup() {
@@ -226,6 +229,9 @@ void loop() {
         break;
       case 5:
         command_5_set_tile_identifier();
+        break;
+      case 6:
+        command_6_magic_numbers();
         break;
       default:
         Serial.write(STATUS_CODE_UNKNOWN_COMMAND);
