@@ -1,4 +1,7 @@
+use std::ffi::c_char;
+
 use serialport::{Error, SerialPortInfo, SerialPortType};
+use rayon::prelude::*;
 
 use tile::Tile;
 
@@ -45,30 +48,71 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
 }
 
 #[no_mangle]
-pub extern "C" fn show(this: &mut ContourWallCore) {
-    for tile in &mut this.tiles {
-        let _status_code = tile.as_mut().command_0_show();
+pub extern "C" fn new_with_ports(
+    com_port0: *const c_char,
+    com_port1: *const c_char,
+    com_port2: *const c_char,
+    com_port3: *const c_char,
+    com_port4: *const c_char,
+    com_port5: *const c_char,
+    baud_rate: u32,
+) -> ContourWallCore {
+    let com_ports = vec![
+        util::str_ptr_to_string(com_port0),
+        util::str_ptr_to_string(com_port1),
+        util::str_ptr_to_string(com_port2),
+        util::str_ptr_to_string(com_port3),
+        util::str_ptr_to_string(com_port4),
+        util::str_ptr_to_string(com_port5),
+    ];
+
+    // Ensure we have exactly 6 ports
+    assert_eq!(com_ports.len(), 6);
+
+    let mut tiles: [Box<Tile>; 6] = Default::default();
+
+    for (i, com_port) in com_ports.into_iter().enumerate() {
+        let tile = Tile::init(com_port, baud_rate);
+        let Ok(tile) = tile else { todo!() };
+        tiles[i] = Box::new(tile);
     }
+
+    ContourWallCore { tiles }
+}
+
+#[no_mangle]
+pub extern "C" fn show(this: &mut ContourWallCore) {
+    // This is the old code that is sequentially written
+    // for tile in &mut this.tiles {
+    //     let _status_code = tile.as_mut().command_0_show();
+    // }
+    
+    (&mut this.tiles).par_iter_mut().for_each(|tile| {
+        let _status_code = tile.as_mut().command_0_show();
+    });
 }
 
 #[no_mangle]
 pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8) {
     let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 7200) };
-    let mut frame_buffers = util::split_framebuffer(frame_buffer);
+    let frame_buffers = util::split_framebuffer(frame_buffer);
 
-    // TODO: Make this for-loop concurrent so the tile.command_2_update_all function,
-    // for all six tiles is called at the same time insteaf of sequentually.
-    // This will result in a 4x performance increase
-    for (i, frame_buffer) in frame_buffers.iter_mut().enumerate() {
-        let _status_code = this.tiles[i].as_mut().command_2_update_all(frame_buffer.as_mut_ptr());
-    }
+    this.tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
+        let x = frame_buffers[i].clone().as_mut_ptr();
+        let _status_code = tile.as_mut().command_2_update_all(x);
+    });
 }
 
 #[no_mangle]
 pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, blue: u8) {
-    for tile in &mut this.tiles {
+    // This is the old code that is sequentially written
+    // for tile in this.tiles {
+    //     let _status_code = tile.as_ref().command_1_solid_color(red, green, blue);
+    // }
+
+    (&mut this.tiles).par_iter_mut().for_each(|tile| {
         let _status_code = tile.as_mut().command_1_solid_color(red, green, blue);
-    }
+    });
 }
 
 #[no_mangle]

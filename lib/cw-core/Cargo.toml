@@ -13,3 +13,4 @@ overflow-checks = false
 
 [dependencies]
 serialport = "4.3.0"
+rayon = "1.10.0"

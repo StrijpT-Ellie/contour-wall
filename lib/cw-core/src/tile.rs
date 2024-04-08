@@ -15,7 +15,7 @@ pub enum InitError {
 pub struct Tile {
     pub frame_time: u64,
     last_serial_write_time: u64,
-    port: Box<dyn SerialPort>,
+    port: Option<Box<dyn SerialPort>>,
     index_converter_vector: [usize; 1200],
 }
 
@@ -31,7 +31,7 @@ impl Tile {
         };
 
         let mut tile = Tile {
-            port,
+            port: Some(port),
             frame_time: 33,
             last_serial_write_time: millis_since_epoch(),
             index_converter_vector: generate_index_conversion_vector(),
@@ -219,10 +219,10 @@ impl Tile {
     }
 
     fn read_from_serial(&mut self, buffer: &mut [u8]) -> Result<(), ()> {
+        let port = self.port.as_mut().expect("Serialport was of value Option::None");
         let start = millis_since_epoch();
         let time_to_receive_ms = 30;
-        while self
-            .port
+        while port
             .bytes_to_read()
             .expect("Cannot get bytes from serial read buffer")
             < buffer.len() as u32
@@ -230,16 +230,16 @@ impl Tile {
             if (millis_since_epoch() - start) > time_to_receive_ms {
                 eprintln!(
                     "[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time",
-                    self.port.bytes_to_read().unwrap(),
+                    port.bytes_to_read().unwrap(),
                     buffer.len(),
                     time_to_receive_ms
                 );
-                let _res = self.port.clear(serialport::ClearBuffer::Input);
+                let _res = port.clear(serialport::ClearBuffer::Input);
                 return Err(());
             }
         }
 
-        if let Err(e) = self.port.read_exact(buffer) {
+        if let Err(e) = port.read_exact(buffer) {
             eprintln!(
                 "[CW CORE ERROR] Error occured during reading of Serial buffer: {}",
                 e
@@ -251,6 +251,13 @@ impl Tile {
     }
 
     fn write_over_serial(&mut self, bytes: &[u8]) -> Result<usize, std::io::Error> {
-        self.port.write(bytes)
+        let port = self.port.as_mut().expect("Serialport was of value Option::None");
+        port.write(bytes)
+    }
+}
+
+impl Default for Tile {
+    fn default() -> Self {
+        Self { frame_time: 0, last_serial_write_time: 0, port: Option::None, index_converter_vector: [0; 1200] }
     }
 }
