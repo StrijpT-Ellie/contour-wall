@@ -6,6 +6,7 @@ use crate::{
 };
 use serialport::SerialPort;
 
+#[derive(Debug)]
 pub enum InitError {
     NotAnEllieTile,
     FailedToOpenConnection,
@@ -15,7 +16,7 @@ pub enum InitError {
 pub struct Tile {
     pub frame_time: u64,
     last_serial_write_time: u64,
-    port: Option<Box<dyn SerialPort>>,
+    port: Box<dyn SerialPort>,
     index_converter_vector: [usize; 1200],
 }
 
@@ -31,14 +32,14 @@ impl Tile {
         };
 
         let mut tile = Tile {
-            port: Some(port),
+            port: port,
             frame_time: 33,
             last_serial_write_time: millis_since_epoch(),
             index_converter_vector: generate_index_conversion_vector(),
         };
 
         let magic_numbers = tile.command_6_magic_numbers()[0..5]
-            .iter()
+            .into_iter()
             .map(|&x| x as char)
             .collect::<String>();
 
@@ -81,18 +82,16 @@ impl Tile {
         }
     }
 
-    pub fn command_2_update_all(&mut self, frame_buffer_ptr: *const u8) -> StatusCode {
+    pub fn command_2_update_all(&mut self, frame_buffer_unordered: &[u8]) -> StatusCode {
         // Indicate to tile that command 2 is about to be executed
         if self.write_over_serial(&[2]).is_err() {
             return StatusCode::ErrorInternal;
         }
 
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
-        let frame_buffer_unordered: &[u8] =
-            unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 1200) };
         let mut frame_buffer = [0; 1201];
         let mut crc: u8 = 0;
-        for (i, byte) in frame_buffer_unordered.iter().enumerate() {
+        for (i, byte) in frame_buffer_unordered.into_iter().enumerate() {
             crc += *byte;
             frame_buffer[self.index_converter_vector[i]] = *byte;
         }
@@ -114,14 +113,16 @@ impl Tile {
 
     pub fn command_3_update_specific_led(
         &mut self,
-        frame_buffer_ptr: *const u8,
-        led_count: u8,
+        frame_buffer: &[u8],
     ) -> StatusCode {
         // Indicate to tile that command 3 is about to be executed
         if self.write_over_serial(&[3]).is_err() {
             return StatusCode::ErrorInternal;
         }
+        
+        assert_eq!(frame_buffer.len(), 255 * 5, "When using command_3_update_specific_led you cannot transfer more then 255 LED");
 
+        let led_count = (frame_buffer.len() / 5) as u8;
         if self.write_over_serial(&[led_count, led_count]).is_err() {
             return StatusCode::ErrorInternal;
         }
@@ -138,8 +139,6 @@ impl Tile {
         }
 
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
-        let frame_buffer: &[u8] =
-            unsafe { std::slice::from_raw_parts(frame_buffer_ptr, (led_count * 5) as usize) };
         let mut crc: u8 = 0;
         for byte in frame_buffer {
             crc += *byte;
@@ -219,7 +218,7 @@ impl Tile {
     }
 
     fn read_from_serial(&mut self, buffer: &mut [u8]) -> Result<(), ()> {
-        let port = self.port.as_mut().expect("Serialport was of value Option::None");
+        let port = self.port.as_mut();
         let start = millis_since_epoch();
         let time_to_receive_ms = 30;
         while port
@@ -251,13 +250,7 @@ impl Tile {
     }
 
     fn write_over_serial(&mut self, bytes: &[u8]) -> Result<usize, std::io::Error> {
-        let port = self.port.as_mut().expect("Serialport was of value Option::None");
+        let port = self.port.as_mut();
         port.write(bytes)
-    }
-}
-
-impl Default for Tile {
-    fn default() -> Self {
-        Self { frame_time: 0, last_serial_write_time: 0, port: Option::None, index_converter_vector: [0; 1200] }
     }
 }
