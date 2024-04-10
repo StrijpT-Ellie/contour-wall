@@ -55,8 +55,7 @@ class ContourWall:
         self._drop = self.__lib.drop
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
 
-        self._cw_core = self._new(COMport.encode(), baud_rate)
-        print(self._cw_core.serial)
+        self._cw_core = self._new(COMport.encode(), baud_rate)  
 
         if any(port.device == COMport for port in serial.tools.list_ports.comports()):
             self._cw_core = self._new(COMport.encode(), baud_rate)
@@ -65,20 +64,10 @@ class ContourWall:
             raise Exception(f"COM port \"{COMport}\", does not exist")
 
         self.pixels: np.array = np.zeros((20, 20, 3), dtype=np.uint8)
-        self.__index_converter: np.array = np.zeros((20, 20), dtype=np.uint16)
-        self.__generate_index_conversion_matrix()
         self.pushed_frames: int = 0
 
     def show(self) -> int:
-        buffer = np.zeros(1200, dtype=np.uint8)
-
-        for (x, row) in enumerate(self.pixels):
-            for (y, pixel) in enumerate(row):
-                buffer[self.__index_converter[x, y]*3+0] = pixel[2]
-                buffer[self.__index_converter[x, y]*3+1] = pixel[1]
-                buffer[self.__index_converter[x, y]*3+2] = pixel[0]
-
-        ptr = ctypes.cast(buffer.tobytes(), ctypes.POINTER(ctypes.c_uint8))
+        ptr = ctypes.cast(self.pixels.tobytes(), ctypes.POINTER(ctypes.c_uint8))
 
         res = self._command_2_update_all(ctypes.byref(self._cw_core), ptr) 
         if res != 100:
@@ -95,21 +84,6 @@ class ContourWall:
     def get_identifer(self) -> tuple[int, int]:
         res = self._command_4_get_tile_identifier(ctypes.byref(self._cw_core))
         return (res >> 8, res & 255)
-    
-    def __generate_index_conversion_matrix(self):
-        for x in range(20):
-            row_start_value = x
-            if x >= 15:
-                row_start_value = 300 + x - 15
-            elif x >= 10:
-                row_start_value = 200 + x - 10
-            elif x >= 5:
-                row_start_value = 100 + x - 5
-
-            y = 0
-            for index in range(row_start_value, row_start_value+100, 5):
-                self.__index_converter[x, y] = index
-                y += 1
 
 def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
     h /= 255
