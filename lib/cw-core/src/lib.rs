@@ -38,7 +38,7 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
    
     for port in ports {
         let SerialPortType::UsbPort(_) = port.port_type else {
-            todo!();
+            continue;
         };
 
         let tile = Tile::init(port.port_name.clone(), baud_rate);
