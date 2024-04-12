@@ -1,7 +1,7 @@
 use std::ffi::c_char;
 
-use serialport::{Error, SerialPortInfo, SerialPortType};
 use rayon::prelude::*;
+use serialport::{Error, SerialPortInfo, SerialPortType};
 
 use tile::Tile;
 
@@ -31,11 +31,12 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
     // let tiles: Vec<Option<Tile>> = vec![None; 6];
     // but, that does not work due to .clone() not being implemented for Tile
     // .clone() cannot be implemented for Tile, due to the Tile::Port field.
+
     let mut tiles: Vec<Option<Tile>> = Vec::with_capacity(6);
     for _ in 0..6 {
         tiles.push(None);
     }
-   
+
     for port in ports {
         let SerialPortType::UsbPort(_) = port.port_type else {
             todo!();
@@ -44,10 +45,13 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
         let tile = Tile::init(port.port_name.clone(), baud_rate);
         let mut tile = match tile {
             Ok(tile) => tile,
-            Err(error) => { 
-                println!("'{}', is not an ELLIE tile, because: {:?}", port.port_name, error);
+            Err(error) => {
+                println!(
+                    "'{}', is not an ELLIE tile, because: {:?}",
+                    port.port_name, error
+                );
                 continue;
-             }
+            }
         };
 
         let (status_code, identifier) = tile.command_4_get_tile_identifier();
@@ -57,11 +61,18 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
     }
 
     let mut tiles: Vec<Tile> = tiles.into_iter().flat_map(|tile| tile).collect();
-
     // TODO: Implement actual error that does not crash the program
-    assert_eq!(tiles.len(), 6, "[CW CORE ERROR] Only {}/6 tiles were found", tiles.len());
-        
-    ContourWallCore { tiles_ptr: tiles.as_mut_ptr(), tiles_len: tiles.len() }
+    assert_eq!(
+        tiles.len(),
+        6,
+        "[CW CORE ERROR] Only {}/6 tiles were found",
+        tiles.len()
+    );
+
+    ContourWallCore {
+        tiles_ptr: tiles.as_mut_ptr(),
+        tiles_len: tiles.len(),
+    }
 }
 
 #[no_mangle]
@@ -92,15 +103,18 @@ pub extern "C" fn new_with_ports(
         let tile = Tile::init(com_port.clone(), baud_rate);
         let tile = match tile {
             Ok(tile) => tile,
-            Err(error) => { 
+            Err(error) => {
                 println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
                 continue;
-             }
+            }
         };
         tiles[i] = tile;
     }
 
-    ContourWallCore { tiles_ptr: tiles.as_mut_ptr(), tiles_len: 6 }
+    ContourWallCore {
+        tiles_ptr: tiles.as_mut_ptr(),
+        tiles_len: 6,
+    }
 }
 
 #[no_mangle]
@@ -110,17 +124,17 @@ pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) 
     let tile = Tile::init(com_port.clone(), baud_rate);
     let tile = match tile {
         Ok(tile) => tile,
-        Err(error) => { 
+        Err(error) => {
             println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
             todo!();
-         }
+        }
     };
 
     let mut v = vec![tile];
 
     ContourWallCore {
         tiles_ptr: v.as_mut_ptr(),
-        tiles_len: 1
+        tiles_len: 1,
     }
 }
 
@@ -130,8 +144,9 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
     // for tile in &mut this.tiles {
     //     let _status_code = tile.as_mut().command_0_show();
     // }
-        
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+
+    let mut tiles: Vec<Tile> =
+        unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
 
     tiles.par_iter_mut().for_each(|tile| {
         let _status_code = tile.command_0_show();
@@ -142,23 +157,31 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
 pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8) {
     if this.tiles_len == 1 {
         let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 1200) };
-    
-        let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
-    
+
+        let mut tiles: Vec<Tile> =
+            unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+
         tiles.par_iter_mut().for_each(|tile| {
             let _status_code = tile.command_2_update_all(frame_buffer);
         });
     } else if this.tiles_len == 6 {
         let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 7200) };
         let frame_buffers = util::split_framebuffer(frame_buffer);
-    
-        let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
-    
+
+        let mut tiles: Vec<Tile> =
+            unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+
         tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
+            //check the different here
+         
+
             let _status_code = tile.command_2_update_all(frame_buffers[i].as_slice());
         });
     } else {
-        unreachable!("Amount of tiles HAS to be either 1 or 6, not '{}'", this.tiles_len);
+        unreachable!(
+            "Amount of tiles HAS to be either 1 or 6, not '{}'",
+            this.tiles_len
+        );
     }
 }
 
@@ -169,8 +192,9 @@ pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, bl
     //     let _status_code = tile.as_ref().command_1_solid_color(red, green, blue);
     // }
 
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
-        
+    let mut tiles: Vec<Tile> =
+        unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+
     tiles.par_iter_mut().for_each(|tile| {
         let _status_code = tile.command_1_solid_color(red, green, blue);
     });

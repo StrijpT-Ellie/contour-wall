@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     status_code::StatusCode,
-    util::{generate_index_conversion_vector, millis_since_epoch},
+    util::{generate_index_conversion_vector, get_different_framebuffer, millis_since_epoch},
 };
 use serialport::SerialPort;
 
@@ -17,7 +17,9 @@ pub struct Tile {
     pub frame_time: u64,
     last_serial_write_time: u64,
     port: Box<dyn SerialPort>,
+
     index_converter_vector: [usize; 1200],
+    previous_framebuffer: [u8; 1200],
 }
 
 impl Tile {
@@ -35,7 +37,9 @@ impl Tile {
             port: port,
             frame_time: 33,
             last_serial_write_time: millis_since_epoch(),
+
             index_converter_vector: generate_index_conversion_vector(),
+            previous_framebuffer: [0u8; 1200],
         };
 
         let magic_numbers = tile.command_6_magic_numbers()[0..5]
@@ -88,9 +92,18 @@ impl Tile {
             return StatusCode::ErrorInternal;
         }
 
+        let different_frame_buffer = get_different_framebuffer(&mut self.previous_framebuffer,frame_buffer_unordered);
+
+        //check to use command 2 or command 3
+        if different_frame_buffer.len() / 5 < 100 {
+            let send_different_frame_buffer: &[u8] = &different_frame_buffer;
+            return self.command_3_update_specific_led(send_different_frame_buffer);
+        }
+
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
         let mut frame_buffer = [0; 1201];
         let mut crc: u8 = 0;
+
         for (i, byte) in frame_buffer_unordered.into_iter().enumerate() {
             crc += *byte;
             frame_buffer[self.index_converter_vector[i]] = *byte;
@@ -111,16 +124,17 @@ impl Tile {
         }
     }
 
-    pub fn command_3_update_specific_led(
-        &mut self,
-        frame_buffer: &[u8],
-    ) -> StatusCode {
+    pub fn command_3_update_specific_led(&mut self, frame_buffer: &[u8]) -> StatusCode {
         // Indicate to tile that command 3 is about to be executed
         if self.write_over_serial(&[3]).is_err() {
             return StatusCode::ErrorInternal;
         }
-        
-        assert_eq!(frame_buffer.len(), 255 * 5, "When using command_3_update_specific_led you cannot transfer more then 255 LED");
+
+        assert_eq!(
+            frame_buffer.len(),
+            255 * 5,
+            "When using command_3_update_specific_led you cannot transfer more then 255 LED"
+        );
 
         let led_count = (frame_buffer.len() / 5) as u8;
         if self.write_over_serial(&[led_count, led_count]).is_err() {
