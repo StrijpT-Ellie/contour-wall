@@ -57,21 +57,17 @@ impl Tile {
             index_converter_vector: generate_index_conversion_vector(),
         };
 
-        // let magic_numbers = tile.command_6_magic_numbers()[0..5]
-        //     .into_iter()
-        //     .map(|&x| x as char)
-        //     .collect::<String>();
+        let magic_numbers = tile.command_6_magic_numbers()[0..5]
+            .into_iter()
+            .map(|&x| x as char)
+            .collect::<String>();
 
-        // println!("{}", magic_numbers);
-
-        // if magic_numbers != "Ellie" {
-        //     tile.drop();
-        //     Result::Err(InitError::NotAnEllieTile)
-        // } else {
-        //     Result::Ok(tile)
-        // }
-
-        Result::Ok(tile)
+        if magic_numbers != "Ellie" {
+            tile.drop();
+            Result::Err(InitError::NotAnEllieTile)
+        } else {
+            Result::Ok(tile)
+        }
     }
 
     /// Executes `command_0_show` of the protocol.
@@ -396,7 +392,7 @@ impl Tile {
     fn read_from_serial(&mut self, buffer: &mut [u8]) -> Result<(), ()> {
         let port = self.port.as_mut();
         let start = millis_since_epoch();
-        let time_to_receive_ms = 30;
+        let time_to_receive_ms = 50;
         while port
             .bytes_to_read()
             .expect("Cannot get bytes from serial read buffer")
@@ -409,7 +405,6 @@ impl Tile {
                     buffer.len(),
                     time_to_receive_ms
                 );
-                println!("{}", port.bytes_to_read().unwrap());
                 let _res = port.clear(serialport::ClearBuffer::Input);
                 return Err(());
             }

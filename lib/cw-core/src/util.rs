@@ -26,7 +26,7 @@ pub fn generate_index_conversion_vector() -> [usize; 1200] {
 
         let mut y = 0;
         for index in (row_start_value..row_start_value + 100).step_by(5) {
-            matrix[y][x] = index * 3;
+            matrix[x][y] = index * 3;
             y += 1;
         }
     }
