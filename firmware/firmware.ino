@@ -194,7 +194,7 @@ void command_6_magic_numbers() {
 }
 
 void setup() {
-  Serial.begin(921600);
+  Serial.begin(2000000);
   Serial.setTimeout(10);  // It takes 1.6ms to transfer 12000 bites over serial (921600), at 100% efficiency.
 
   pinMode(BUILTIN_LED, OUTPUT);

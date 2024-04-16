@@ -1,5 +1,4 @@
-use std::{ffi::c_char, thread::sleep, time::Duration};
-use std::ptr::NonNull;
+use std::ffi::c_char;
 
 use serialport::{Error, SerialPortInfo, SerialPortType};
 use rayon::prelude::*;
@@ -136,9 +135,8 @@ pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) 
 #[no_mangle]
 pub extern "C" fn configure_threadpool(threads: u8) -> bool {
     let res = rayon::ThreadPoolBuilder::new().num_threads(threads as usize).build_global();
-    match &res {
-        Ok(_) => sleep(Duration::from_secs(3)),
-        Err(_) => println!("[CW CORE ERROR] Failed to set the threadpool threadcount to: {}", threads),
+    if res.is_err() {
+        println!("[CW CORE ERROR] Failed to set the threadpool threadcount to: {}", threads);
     }
 
     res.is_ok()
@@ -151,28 +149,28 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
     //     let _status_code = tile.as_mut().command_0_show();
     // }
         
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, 1, 1) };
+    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
 
     tiles.par_iter_mut().for_each(|tile| {
         let _status_code = tile.command_0_show();
     });
+
+    std::mem::forget(tiles);
 }
 
 #[no_mangle]
 pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8) {
+    let buffer_size = 1200 * this.tiles_len;
+
+    let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, buffer_size) };
+    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+
     if this.tiles_len == 1 {
-        let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 1200) };
-    
-        let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
-    
         tiles.par_iter_mut().for_each(|tile| {
             let _status_code = tile.command_2_update_all(frame_buffer);
         });
     } else if this.tiles_len == 6 {
-        let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 7200) };
         let frame_buffers = util::split_framebuffer(frame_buffer);
-    
-        let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
     
         tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
             let _status_code = tile.command_2_update_all(frame_buffers[i].as_slice());
@@ -180,6 +178,8 @@ pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *cons
     } else {
         unreachable!("Amount of tiles HAS to be either 1 or 6, not '{}'", this.tiles_len);
     }
+
+    std::mem::forget(tiles);
 }
 
 #[no_mangle]
@@ -189,12 +189,13 @@ pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, bl
     //     let _status_code = tile.as_ref().command_1_solid_color(red, green, blue);
     // }
 
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, 1, 1) };
+    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
         
     tiles.par_iter_mut().for_each(|tile| {
         let status_code = tile.command_1_solid_color(red, green, blue);
-        println!("{}", status_code);
     });
+
+    std::mem::forget(tiles);
 }
 
 #[no_mangle]
@@ -219,14 +220,31 @@ mod tests {
     #[test]
     fn test_solid_color() {
         let com_string: *const c_char = CString::new("COM5")
-            .expect("CString conversion failed")
-            .into_raw();
+            .expect("CString conversion failed").into_raw();
 
         let mut cw = single_new_with_port(com_string, 2_000_000);
 
         solid_color(&mut cw, 255, 255, 255);
-        // show(&mut cw);
+        show(&mut cw);
 
+        assert!(false);
+    }
+
+    #[test]
+    fn test_update_all() {
+        let com_string: *const c_char = CString::new("COM5")
+            .expect("CString conversion failed").into_raw();
+
+        let mut cw = single_new_with_port(com_string, 2_000_000);
+
+        let mut buffer = vec![0; 1200];
+        buffer[1150] = 255;
+        buffer[0] = 255;
+        buffer[59] = 255;
+
+        update_all(&mut cw, buffer.as_ptr());
+        show(&mut cw);
+        
         assert!(false);
     }
 }

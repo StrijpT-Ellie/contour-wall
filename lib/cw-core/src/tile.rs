@@ -154,7 +154,6 @@ impl Tile {
         // Read response of tile
         let read_buf = &mut [0; 1];
         if self.read_from_serial(read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-            println!("{:?}", read_buf[0]);
             StatusCode::ErrorInternal
         } else {
             StatusCode::new(read_buf[0]).unwrap()
