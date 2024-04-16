@@ -55,12 +55,8 @@ class ContourWall:
         self._drop = self.__lib.drop
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
 
-        self._cw_core = self._new(COMport.encode(), baud_rate)
-        print(self._cw_core.serial)
-
         if any(port.device == COMport for port in serial.tools.list_ports.comports()):
             self._cw_core = self._new(COMport.encode(), baud_rate)
-            print(self._cw_core.serial)
         else:
             raise Exception(f"COM port \"{COMport}\", does not exist")
 
