@@ -1,4 +1,3 @@
-workspace = { members = ["cw-core2"] }
 [package]
 name = "contourwall_core"
 version = "0.1.0"

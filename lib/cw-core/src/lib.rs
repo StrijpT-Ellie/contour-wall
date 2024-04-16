@@ -1,4 +1,5 @@
-use std::ffi::c_char;
+use std::{ffi::c_char, thread::sleep, time::Duration};
+use std::ptr::NonNull;
 
 use serialport::{Error, SerialPortInfo, SerialPortType};
 use rayon::prelude::*;
@@ -60,8 +61,11 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
 
     // TODO: Implement actual error that does not crash the program
     assert_eq!(tiles.len(), 6, "[CW CORE ERROR] Only {}/6 tiles were found", tiles.len());
-        
-    ContourWallCore { tiles_ptr: tiles.as_mut_ptr(), tiles_len: tiles.len() }
+
+    let ptr = tiles.as_mut_ptr();
+    std::mem::forget(tiles);
+
+    ContourWallCore { tiles_ptr: ptr, tiles_len: 6 }
 }
 
 #[no_mangle]
@@ -100,7 +104,10 @@ pub extern "C" fn new_with_ports(
         tiles[i] = tile;
     }
 
-    ContourWallCore { tiles_ptr: tiles.as_mut_ptr(), tiles_len: 6 }
+    let ptr = tiles.as_mut_ptr();
+    std::mem::forget(tiles);
+
+    ContourWallCore { tiles_ptr: ptr, tiles_len: 6 }
 }
 
 #[no_mangle]
@@ -116,12 +123,25 @@ pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) 
          }
     };
 
-    let mut v = vec![tile];
+    let mut tiles = vec![tile];
+    let ptr = tiles.as_mut_ptr();
+    std::mem::forget(tiles);
 
     ContourWallCore {
-        tiles_ptr: v.as_mut_ptr(),
+        tiles_ptr: ptr,
         tiles_len: 1
     }
+}
+
+#[no_mangle]
+pub extern "C" fn configure_threadpool(threads: u8) -> bool {
+    let res = rayon::ThreadPoolBuilder::new().num_threads(threads as usize).build_global();
+    match &res {
+        Ok(_) => sleep(Duration::from_secs(3)),
+        Err(_) => println!("[CW CORE ERROR] Failed to set the threadpool threadcount to: {}", threads),
+    }
+
+    res.is_ok()
 }
 
 #[no_mangle]
@@ -131,7 +151,7 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
     //     let _status_code = tile.as_mut().command_0_show();
     // }
         
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, 1, 1) };
 
     tiles.par_iter_mut().for_each(|tile| {
         let _status_code = tile.command_0_show();
@@ -169,10 +189,11 @@ pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, bl
     //     let _status_code = tile.as_ref().command_1_solid_color(red, green, blue);
     // }
 
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, 1, 1) };
         
     tiles.par_iter_mut().for_each(|tile| {
-        let _status_code = tile.command_1_solid_color(red, green, blue);
+        let status_code = tile.command_1_solid_color(red, green, blue);
+        println!("{}", status_code);
     });
 }
 
@@ -182,6 +203,30 @@ pub extern "C" fn drop(this: *mut ContourWallCore) {
         unsafe {
             let cw = Box::from_raw(this);
             std::mem::drop(cw);
+
+            let tiles: Vec<Tile> = Vec::from_raw_parts((*this).tiles_ptr, (*this).tiles_len, (*this).tiles_len);
+            std::mem::drop(tiles);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::CString;
+
+    use super::*;
+
+    #[test]
+    fn test_solid_color() {
+        let com_string: *const c_char = CString::new("COM5")
+            .expect("CString conversion failed")
+            .into_raw();
+
+        let mut cw = single_new_with_port(com_string, 2_000_000);
+
+        solid_color(&mut cw, 255, 255, 255);
+        // show(&mut cw);
+
+        assert!(false);
     }
 }
