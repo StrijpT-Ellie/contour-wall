@@ -120,8 +120,7 @@ if __name__ == "__main__":
     # cw = ContourWall("COM0", baud_rate=2_000_000)
     # Example for Unix
     # cw = ContourWall("/dev/ttyUSB0", baud_rate=2_000_000)
-    cw = ContourWall()
-    cw.single_new_with_port("COM5")
+    cw = ContourWall("YOUR COM PORT", baud_rate=2_000_000)
 
     args = sys.argv[1:]
 
