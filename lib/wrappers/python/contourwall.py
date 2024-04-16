@@ -135,7 +135,7 @@ def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
     else:
         return int(v * 255), int(p * 255), int(q * 255)
 
-def check_comport_existence(self, COMports) -> bool:
+def check_comport_existence(COMports) -> bool:
     """Check for existing COM ports"""
     
     for COMport in COMports:
