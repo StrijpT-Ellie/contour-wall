@@ -1,4 +1,5 @@
 import numpy as np
+import serial.tools.list_ports
 import ctypes
 from ctypes import c_void_p, c_char_p, c_uint32, c_uint8, c_bool
 from sys import platform
@@ -60,12 +61,18 @@ class ContourWall:
     def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate=2_000_000):
         """Create a new instance of ContourWallCore with 6 tiles"""
 
-        self._cw_core = self._new_with_ports(port1.encode(), port2.encode(), port3.encode(), port4.encode(), port5.encode(), port6.encode(), baudrate)
+        if check_comport_existence([port1, port2, port3, port4, port5, port6]):
+            self._cw_core = self._new_with_ports(port1.encode(), port2.encode(), port3.encode(), port4.encode(), port5.encode(), port6.encode(), baudrate)
+        else:
+            raise Exception(f"one of the COM ports does not exist")
 
     def single_new_with_port(self, port: str, baudrate=2_000_000):
         """Create a new instance of ContourWallCore with 1 tile"""
 
-        self._cw_core = self._single_new_with_port(port.encode(), baudrate)
+        if check_comport_existence([port]):
+            self._cw_core = self._single_new_with_port(port.encode(), baudrate)
+        else:
+            raise Exception(f"COM port '{port}' does not exist")
 
     def show(self):
         """
@@ -100,7 +107,7 @@ class ContourWall:
         """Drop the ContourWallCore instance"""
 
         self._drop(ctypes.byref(self._cw_core))
-    
+
 def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
     h /= 255
     s /= 255
@@ -127,3 +134,11 @@ def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
         return int(t * 255), int(p * 255), int(v * 255)
     else:
         return int(v * 255), int(p * 255), int(q * 255)
+
+def check_comport_existence(self, COMports) -> bool:
+    """Check for existing COM ports"""
+    
+    for COMport in COMports:
+        if not any(port.device == COMport for port in serial.tools.list_ports.comports()):
+            return False
+    return True
