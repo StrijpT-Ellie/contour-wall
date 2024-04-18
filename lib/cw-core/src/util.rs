@@ -75,3 +75,66 @@ pub fn configure_logging() {
         .filter_level(log::LevelFilter::Info)
         .init();
 }
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::CString;
+
+    use super::*;
+
+    #[test]
+    fn test_str_ptr_to_string() {
+        let win_com: *const c_char = CString::new("COM5")
+            .expect("CString conversion failed")
+            .into_raw();
+
+        let linux_com: *const c_char = CString::new("/dev/ttyUSB5")
+            .expect("CString conversion failed")
+            .into_raw();
+
+        assert_eq!(str_ptr_to_string(win_com), "COM5");
+        assert_eq!(str_ptr_to_string(linux_com), "/dev/ttyUSB5");
+    }
+
+    #[test]
+    fn test_split_framebuffer_all_0() {
+        let framebuffer: &[u8] = &[0; 7200];
+
+        let framebuffers = split_framebuffer(framebuffer);
+
+        for (i, framebuffer) in framebuffers.iter().enumerate() {
+            assert_eq!(framebuffer.len(), 1200, "Framebuffer at index: {}, has a length of {} not 1200", i, framebuffer.len())
+        }
+    }
+
+    #[test]
+    fn test_split_framebuffer() {
+        let framebuffer: &mut [u8] = &mut [0; 7200];
+
+        framebuffer[0] = 1;    
+        framebuffer[60] = 2;   
+        framebuffer[2400] = 3; 
+        framebuffer[2460] = 4; 
+        framebuffer[4800] = 5; 
+        framebuffer[4860] = 6; 
+
+        let framebuffers = split_framebuffer(framebuffer);
+
+        assert_eq!(framebuffers[0][0], 1, "Top left framebuffer");
+        assert_eq!(framebuffers[1][0], 3, "Top center framebuffer");
+        assert_eq!(framebuffers[2][0], 5, "top right framebuffer");
+        assert_eq!(framebuffers[3][0], 2, "Bottom left framebuffer");
+        assert_eq!(framebuffers[4][0], 4, "Bottom center framebuffer");
+        assert_eq!(framebuffers[5][0], 6, "Bottom right framebuffer");
+    }
+
+    #[test]
+    fn test_index_conversion_vector() {
+        let conversion_vector = generate_index_conversion_vector();
+
+        assert_eq!(conversion_vector[1199], 1199);
+        assert_eq!(conversion_vector[60], 3);
+        assert_eq!(conversion_vector[300], 300);
+        assert_eq!(conversion_vector[659], 887);
+    }
+}
