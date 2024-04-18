@@ -3,6 +3,7 @@ import serial.tools.list_ports
 import ctypes
 from ctypes import c_void_p, c_char_p, c_uint32, c_uint8, c_bool
 from sys import platform
+import time
 
 class ContourWallCore(ctypes.Structure):
     _fields_ = [
@@ -16,16 +17,16 @@ class ContourWall:
 
         # Load the Rust shared object
         if platform == "win32":
-            self.__lib = ctypes.CDLL("./cw_core.dll")
+            self.__lib = ctypes.CDLL("./contourwall_core.dll")
         elif platform in ["darwin", "linux"]:
-            self.__lib = ctypes.CDLL("./cw_core.so")
+            self.__lib = ctypes.CDLL("./contourwall_core.so")
         else:
             raise Exception(f"'{platform}' is not a supported operating system")
 
         self._new = self.__lib.new
         self._new.argtypes = [c_uint32]
         self._new.restype = ContourWallCore
-
+    
         self._new_with_ports = self.__lib.new_with_ports
         self._new_with_ports.argtypes = [ctypes.POINTER(c_char_p), ctypes.POINTER(c_char_p), ctypes.POINTER(c_char_p), ctypes.POINTER(c_char_p), ctypes.POINTER(c_char_p), ctypes.POINTER(c_char_p), c_uint32]
         self._new_with_ports.restype = ContourWallCore
@@ -74,7 +75,7 @@ class ContourWall:
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
-    def show(self):
+    def show(self, sleep_ms:int=0):
         """
         Update each single LED on the ContourWallCore with the pixel data in 'cw.pixels'.
         
@@ -89,6 +90,7 @@ class ContourWall:
         self._update_all(ctypes.byref(self._cw_core), ptr)
         self._show(ctypes.byref(self._cw_core))
         self.pushed_frames += 1
+        time.sleep(sleep_ms/1000)
 
     def fill_solid(self, r: int, g: int, b: int):
         """
@@ -100,8 +102,7 @@ class ContourWall:
         """
 
         self._solid_color(ctypes.byref(self._cw_core), r, g, b)
-        self._show(ctypes.byref(self._cw_core))
-        self.pushed_frames += 1
+        self.pixels[:] = r, g, b
 
     def drop(self):
         """Drop the ContourWallCore instance"""

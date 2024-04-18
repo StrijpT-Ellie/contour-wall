@@ -1,4 +1,5 @@
-use std::time::Duration;
+use std::{thread, time};
+use std::time::{Duration, Instant};
 
 use crate::{
     status_code::StatusCode,
@@ -42,7 +43,7 @@ impl Tile {
     /// ```
     pub fn init(port: String, baudrate: u32) -> Result<Tile, InitError> {
         let Ok(port) = serialport::new(&port, baudrate)
-            .timeout(Duration::from_secs(0))
+            .timeout(Duration::from_millis(25))
             .stop_bits(serialport::StopBits::One)
             .parity(serialport::Parity::None)
             .open()
@@ -52,8 +53,8 @@ impl Tile {
 
         let mut tile = Tile {
             port: port,
-            frame_time: 33,
-            last_serial_write_time: millis_since_epoch(),
+            frame_time: 15,
+            last_serial_write_time: 0,
             index_converter_vector: generate_index_conversion_vector(),
         };
 
@@ -68,6 +69,8 @@ impl Tile {
         } else {
             Result::Ok(tile)
         }
+        
+        // Ok(tile)
     }
 
     /// Executes `command_0_show` of the protocol.
@@ -183,6 +186,11 @@ impl Tile {
     /// let status_code = tile.command_2_update_all(framebuffer);
     /// ```
     pub fn command_2_update_all(&mut self, frame_buffer_unordered: &[u8]) -> StatusCode {
+        let timespan = millis_since_epoch() - self.last_serial_write_time;
+        if timespan < self.frame_time.into() {
+            std::thread::sleep(Duration::from_millis((self.frame_time as u64) - timespan));
+        }
+
         // Indicate to tile that command 2 is about to be executed
         if self.write_over_serial(&[2]).is_err() {
             return StatusCode::ErrorInternal;
@@ -391,33 +399,29 @@ impl Tile {
 
     fn read_from_serial(&mut self, buffer: &mut [u8]) -> Result<(), ()> {
         let port = self.port.as_mut();
-        let start = millis_since_epoch();
-        let time_to_receive_ms = 50;
-        while port
-            .bytes_to_read()
-            .expect("Cannot get bytes from serial read buffer")
-            < buffer.len() as u32
-        {
-            if (millis_since_epoch() - start) > time_to_receive_ms {
-                eprintln!(
-                    "[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time",
-                    port.bytes_to_read().unwrap(),
-                    buffer.len(),
-                    time_to_receive_ms
-                );
-                let _res = port.clear(serialport::ClearBuffer::Input);
+
+        let t = time::Instant::now();
+
+        let size = match port.read(buffer) {
+            Ok(size) => size,
+            Err(e) => {
+                eprintln!("[CW CORE ERROR] Error occurred during reading of Serial buffer: {}", e);
+                let _ = port.clear(serialport::ClearBuffer::All);
                 return Err(());
             }
-        }
+        };
 
-        if let Err(e) = port.read_exact(buffer) {
-            eprintln!(
-                "[CW CORE ERROR] Error occured during reading of Serial buffer: {}",
-                e
-            );
-            Err(())
-        } else {
+        if size == buffer.len() {
             Ok(())
+        } else {
+            eprintln!(
+                "[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time",
+                port.bytes_to_read().unwrap_or(666),
+                buffer.len(),
+                port.timeout().as_millis()
+            );
+            let _ = port.clear(serialport::ClearBuffer::All);
+            Err(())
         }
     }
 
