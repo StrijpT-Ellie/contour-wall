@@ -1,3 +1,5 @@
+//! Utiliy functions for the ContourWall Core libary.
+
 use std::{
     ffi::{c_char, CStr},
     time::SystemTime,
@@ -61,9 +63,9 @@ pub fn split_framebuffer(framebuffer: &[u8]) -> Vec<Vec<u8>> {
 #[cfg(debug_assertions)]
 pub fn configure_logging() {
     env_logger::Builder::new()
-        	.format_timestamp_millis()
-            .filter_level(log::LevelFilter::Trace)
-            .init();
+        .format_timestamp_millis()
+        .filter_level(log::LevelFilter::Trace)
+        .init();
 }
 
 #[cfg(not(debug_assertions))]

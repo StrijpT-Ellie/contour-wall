@@ -1,3 +1,5 @@
+//! StatusCodes abstraction, status codes are used to communicate state between tile and library.
+
 #[derive(PartialEq, Debug)]
 pub enum StatusCode {
     Error,

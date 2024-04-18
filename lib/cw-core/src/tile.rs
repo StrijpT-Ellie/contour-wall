@@ -1,5 +1,7 @@
-use std::{thread, time};
+//! Tile struct and implementation. This struct implements the protocol to communicate with individual tiles.
+
 use std::time::{Duration, Instant};
+use std::{thread, time};
 
 use crate::{
     status_code::StatusCode,
@@ -27,19 +29,19 @@ impl Tile {
     ///
     /// It connects to the tile over serial, and asks for the magic numbers. If are not correct the connection is terminated.
     /// Otherwise the initialized tile is returned.
-    /// 
+    ///
     /// ## Parameters
     /// - port: string which is port location
     /// - baudrate: an unsigned 32bit integer, default value of 2.000.000
-    /// 
+    ///
     /// ## Returns
-    /// 
+    ///
     /// A Result is returned, the `Result::Ok` value contains the tile. If it is an `Result::Err`, it returns an `InitError`
-    /// 
+    ///
     /// ```
     /// let port = String::from("COM5"); // If on Linux, the port is going to look something like this /dev/ttyUSB5
     /// let baudrate: u32 = 2_000_000; // Default speed of 2MHz
-    /// 
+    ///
     /// let tile: Tile = Tile::init(port, baudrate).expect("Tile initialization is unsuccessful.");
     /// ```
     pub fn init(port: String, baudrate: u32) -> Result<Tile, InitError> {
@@ -65,12 +67,11 @@ impl Tile {
             .collect::<String>();
 
         if magic_numbers != "Ellie" {
-            tile.drop();
             Result::Err(InitError::NotAnEllieTile)
         } else {
             Result::Ok(tile)
         }
-        
+
         // Ok(tile)
     }
 
@@ -82,7 +83,7 @@ impl Tile {
     /// The time in between calls needs to be atleast `ContourWallCore::frame_time` (this), which by default is 33ms.
     ///
     /// ## Return
-    /// - StatusCode 
+    /// - StatusCode
     ///
     /// ## Example
     /// ```
@@ -235,7 +236,7 @@ impl Tile {
     /// - frame_buffer: the framebuffer array
     ///
     /// ## Return
-    /// - StatusCode 
+    /// - StatusCode
     ///
     /// ## Example
     ///
@@ -246,16 +247,17 @@ impl Tile {
     ///
     /// let status_code = tile.command_3_update_specific_led(framebuffer);
     /// ```
-    pub fn command_3_update_specific_led(
-        &mut self,
-        frame_buffer: &[u8],
-    ) -> StatusCode {
+    pub fn command_3_update_specific_led(&mut self, frame_buffer: &[u8]) -> StatusCode {
         // Indicate to tile that command 3 is about to be executed
         if self.write_over_serial(&[3]).is_err() {
             return StatusCode::ErrorInternal;
         }
-        
-        assert_eq!(frame_buffer.len(), 255 * 5, "When using command_3_update_specific_led you cannot transfer more then 255 LED");
+
+        assert_eq!(
+            frame_buffer.len(),
+            255 * 5,
+            "When using command_3_update_specific_led you cannot transfer more then 255 LED"
+        );
 
         let led_count = (frame_buffer.len() / 5) as u8;
         if self.write_over_serial(&[led_count, led_count]).is_err() {
@@ -294,7 +296,6 @@ impl Tile {
         }
     }
 
-    
     /// Executes `command_4_get_tile_identifier` of the protocol. Returns the tile identifier which is set in the EEPROM of the ESP32
     ///
     /// Returns an tuple of which the first element is the StatusCode and the second element is the actual identifier.
@@ -357,7 +358,7 @@ impl Tile {
     }
 
     /// Executes `command_6_magic_numbers` of the protocol. Returns the 5 magic_numbers of the tile
-    /// 
+    ///
     /// The magic numbers are the ASCII values of the word: "Ellie".
     ///
     /// ## Example
@@ -376,10 +377,7 @@ impl Tile {
     /// }
     /// ```
     pub fn command_6_magic_numbers(&mut self) -> [u8; 5] {
-        if self
-            .write_over_serial(&[6])
-            .is_err()
-        {
+        if self.write_over_serial(&[6]).is_err() {
             return [0, 0, 0, 0, 0];
         }
 
@@ -390,12 +388,6 @@ impl Tile {
         } else {
             *read_buf
         }
-    }
-
-    /// Transfers ownership of the ContourWallCore object back to Rust and frees the memory.
-    /// Also closes the serial connections
-    pub fn drop(self) {
-        std::mem::drop(self);
     }
 
     fn read_from_serial(&mut self, buffer: &mut [u8]) -> Result<(), ()> {
