@@ -5,6 +5,7 @@ use crate::{
     status_code::StatusCode,
     util::{generate_index_conversion_vector, millis_since_epoch},
 };
+use log::error;
 use serialport::SerialPort;
 
 #[derive(Debug)]
@@ -336,7 +337,7 @@ impl Tile {
     /// ```
     pub fn command_5_set_tile_identifier(&mut self, identifier: u8) -> StatusCode {
         if identifier == 0 {
-            eprintln!("[CW CORE ERROR] Cannot set a tile identifier to 0");
+            error!("Cannot set a tile identifier to 0");
             return StatusCode::Error;
         }
 
@@ -400,12 +401,10 @@ impl Tile {
     fn read_from_serial(&mut self, buffer: &mut [u8]) -> Result<(), ()> {
         let port = self.port.as_mut();
 
-        let t = time::Instant::now();
-
         let size = match port.read(buffer) {
             Ok(size) => size,
             Err(e) => {
-                eprintln!("[CW CORE ERROR] Error occurred during reading of Serial buffer: {}", e);
+                error!("Error occurred during reading of Serial buffer: {}", e);
                 let _ = port.clear(serialport::ClearBuffer::All);
                 return Err(());
             }
@@ -414,8 +413,8 @@ impl Tile {
         if size == buffer.len() {
             Ok(())
         } else {
-            eprintln!(
-                "[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time",
+            error!(
+                "Only {}/{} bytes were received within the {}ms allocated time",
                 port.bytes_to_read().unwrap_or(666),
                 buffer.len(),
                 port.timeout().as_millis()

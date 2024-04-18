@@ -1,5 +1,7 @@
 use std::ffi::c_char;
 
+use log::{info, warn, error, debug, trace};
+use util::configure_logging;
 use serialport::{Error, SerialPortInfo, SerialPortType};
 use rayon::prelude::*;
 
@@ -21,7 +23,7 @@ pub struct ContourWallCore {
 #[no_mangle]
 pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
     fn error_handler(e: Error) -> Vec<SerialPortInfo> {
-        println!("[CW CORE ERROR] {}", e);
+        error!("{}", e);
         Vec::new()
     }
 
@@ -37,7 +39,8 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
     }
    
     for port in ports {
-        let SerialPortType::UsbPort(_) = port.port_type else {
+        let SerialPortType::UsbPort(USB_port) = port.port_type else {
+            trace!("Port: '{}' is a USB port", port.port_name);
             continue;
         };
 
@@ -45,7 +48,7 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
         let mut tile = match tile {
             Ok(tile) => tile,
             Err(error) => { 
-                println!("'{}', is not an ELLIE tile, because: {:?}", port.port_name, error);
+                info!("'{}', is not an ELLIE tile, because: {:?}", port.port_name, error);
                 continue;
              }
         };
@@ -61,10 +64,16 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
     // TODO: Implement actual error that does not crash the program
     assert_eq!(tiles.len(), 6, "[CW CORE ERROR] Only {}/6 tiles were found", tiles.len());
 
-    let ptr = tiles.as_mut_ptr();
+    let tiles_ptr = tiles.as_mut_ptr();
+    let tiles_len = tiles.len();
+    configure_logging();
+    if !configure_threadpool(tiles_len as u8) {
+        warn!("Failed to configure the threadpool with {} thread", tiles_len)
+    }
+
     std::mem::forget(tiles);
 
-    ContourWallCore { tiles_ptr: ptr, tiles_len: 6 }
+    ContourWallCore { tiles_ptr, tiles_len }
 }
 
 #[no_mangle]
@@ -96,17 +105,23 @@ pub extern "C" fn new_with_ports(
         let tile = match tile {
             Ok(tile) => tile,
             Err(error) => { 
-                println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+                info!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
                 continue;
              }
         };
         tiles[i] = tile;
     }
 
-    let ptr = tiles.as_mut_ptr();
+    let tiles_ptr = tiles.as_mut_ptr();
+    let tiles_len = tiles.len();
+    configure_logging();
+    if !configure_threadpool(tiles_len as u8) {
+        warn!("Failed to configure the threadpool with {} thread", tiles_len)
+    }
+
     std::mem::forget(tiles);
 
-    ContourWallCore { tiles_ptr: ptr, tiles_len: 6 }
+    ContourWallCore { tiles_ptr, tiles_len }
 }
 
 #[no_mangle]
@@ -116,19 +131,24 @@ pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) 
     let tile = Tile::init(com_port.clone(), baud_rate);
     let tile = match tile {
         Ok(tile) => tile,
-        Err(error) => { 
-            println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+        Err(error) => {
+            error!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
             todo!();
          }
     };
 
     let mut tiles = vec![tile];
-    let ptr = tiles.as_mut_ptr();
+    let tiles_ptr = tiles.as_mut_ptr();
+    let tiles_len = tiles.len();
+    configure_logging();
+    if !configure_threadpool(tiles_len as u8) {
+        error!("Failed to configure the threadpool with {} thread", tiles_len)
+    }
+
     std::mem::forget(tiles);
 
     ContourWallCore {
-        tiles_ptr: ptr,
-        tiles_len: 1
+        tiles_ptr, tiles_len
     }
 }
 
@@ -136,26 +156,20 @@ pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) 
 pub extern "C" fn configure_threadpool(threads: u8) -> bool {
     let res = rayon::ThreadPoolBuilder::new().num_threads(threads as usize).build_global();
     if res.is_err() {
-        println!("[CW CORE ERROR] Failed to set the threadpool threadcount to: {}", threads);
+        error!("Failed to set the threadpool threadcount to: {}", threads);
     }
 
     res.is_ok()
 }
 
+/// Executes the `command_0_show` on each tile to show their current framebuffer
 #[no_mangle]
 pub extern "C" fn show(this: &mut ContourWallCore) {
-    // This is the old code that is sequentially written
-    // for tile in &mut this.tiles {
-    //     let _status_code = tile.as_mut().command_0_show();
-    // }
-        
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+    let tiles: &mut [Tile] = unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
 
     tiles.par_iter_mut().for_each(|tile| {
         let _status_code = tile.command_0_show();
     });
-
-    std::mem::forget(tiles);
 }
 
 #[no_mangle]
@@ -163,12 +177,11 @@ pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *cons
     let buffer_size = 1200 * this.tiles_len;
 
     let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, buffer_size) };
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+    let tiles: &mut [Tile] = unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
 
     if this.tiles_len == 1 {
-        tiles.par_iter_mut().for_each(|tile| {
-            let _status_code = tile.command_2_update_all(frame_buffer);
-        });
+        let tile = tiles.first_mut().expect("There should at least be one tile");
+        let _status_code = tile.command_2_update_all(frame_buffer);
     } else if this.tiles_len == 6 {
         let frame_buffers = util::split_framebuffer(frame_buffer);
     
@@ -176,10 +189,9 @@ pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *cons
             let _status_code = tile.command_2_update_all(frame_buffers[i].as_slice());
         });
     } else {
-        unreachable!("Amount of tiles HAS to be either 1 or 6, not '{}'", this.tiles_len);
+        error!("--> UNREACHABLE <-- Amount of tiles HAS to be either 1 or 6, not '{}'\n EXITING", this.tiles_len);
+        unreachable!();
     }
-
-    std::mem::forget(tiles);
 }
 
 #[no_mangle]
@@ -189,13 +201,11 @@ pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, bl
     //     let _status_code = tile.as_ref().command_1_solid_color(red, green, blue);
     // }
 
-    let mut tiles: Vec<Tile> = unsafe { Vec::from_raw_parts(this.tiles_ptr, this.tiles_len, this.tiles_len) };
+    let tiles: &mut [Tile] = unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
         
     tiles.par_iter_mut().for_each(|tile| {
         let status_code = tile.command_1_solid_color(red, green, blue);
     });
-
-    std::mem::forget(tiles);
 }
 
 #[no_mangle]

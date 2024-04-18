@@ -57,3 +57,19 @@ pub fn split_framebuffer(framebuffer: &[u8]) -> Vec<Vec<u8>> {
 
     framebuffers
 }
+
+#[cfg(debug_assertions)]
+pub fn configure_logging() {
+    env_logger::Builder::new()
+        	.format_timestamp_millis()
+            .filter_level(log::LevelFilter::Trace)
+            .init();
+}
+
+#[cfg(not(debug_assertions))]
+pub fn configure_logging() {
+    env_logger::Builder::new()
+        .format_timestamp_millis()
+        .filter_level(log::LevelFilter::Info)
+        .init();
+}

@@ -14,3 +14,5 @@ overflow-checks = false
 [dependencies]
 serialport = "4.3.0"
 rayon = "1.10.0"
+log = "0.4"
+env_logger = "0.9"
