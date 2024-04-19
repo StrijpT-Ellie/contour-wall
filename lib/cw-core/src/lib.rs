@@ -1,18 +1,18 @@
 //! This library provides an interface for controlling the tiles using the ContourWall protocol over serial communication
 //! with an ESP32 device mounted on each tile of the ContourWall.
 //!
-//! The ContourWallCore struct represents the core functionality, allowing you to initialize a connection to a COM port, 
+//! The ContourWallCore struct represents the core functionality, allowing you to initialize a connection to a COM port,
 //! send commands to update LED colors, retrieve tile identifiers, and more.
 //!
 //! For more details on available commands and usage, refer to the individual function documentation.
 //!
 //! # Example Usage
 //!
-//! To utilize this library, ensure you have the necessary serial port permissions 
+//! To utilize this library, ensure you have the necessary serial port permissions
 //! and ESP32 firmware flashed with the ContourWall protocol support.
 //!
 //! ## Full Contour Wall mode (6 tiles)
-//! 
+//!
 //! ```rust
 //! use std::ffi::CString;
 //! use contourwall_core::*;
@@ -25,9 +25,9 @@
 //!     show(&mut cw); // Shows the changes on the LED tiles
 //! }
 //! ```
-//! 
-//! ## Single tile mode 
-//! 
+//!
+//! ## Single tile mode
+//!
 //! ```rust
 //! use std::ffi::CString;
 //! use contourwall_core::*;
@@ -41,35 +41,35 @@
 //!     show(&mut cw); // Shows the changes on the LED tiles
 //! }
 //! ```
-//! 
+//!
 //! # Compatibility
 //!
-//! This library is compatible with both Windows and Linux systems, It has been tested on Windows devices and a 
+//! This library is compatible with both Windows and Linux systems, It has been tested on Windows devices and a
 //! Raspberry Pi 5. MacOS is untested, however it should work.
 //!
 //! # Errors
 //!
-//! Errors encountered during serial communication or protocol execution are indicated 
+//! Errors encountered during serial communication or protocol execution are indicated
 //! through StatusCode values returned by the library functions.
 //!
 //! # Safety
 //!
-//! This library uses unsafe Rust code to interface with C-style pointers and raw bytes for serial communication. 
+//! This library uses unsafe Rust code to interface with C-style pointers and raw bytes for serial communication.
 //! Extra care should be taken to ensure proper usage to avoid memory unsafety and undefined behavior.
 //!
 //! # Protocol Documentation
 //!
-//! This library assumes adherence to the ContourWall protocol. 
+//! This library assumes adherence to the ContourWall protocol.
 //! Please refer to the protocol documentation for more information on commands and their expected behavior.
 //!
 //! # License
 //!
-//! This library is distributed under the terms of the MIT license. 
+//! This library is distributed under the terms of the MIT license.
 //! See the [LICENSE](https://github.com/StrijpT-Ellie/contour-wall/blob/main/LICENSE) file for details.
 
 use std::ffi::c_char;
 
-use log::{  error, info, trace, warn};
+use log::{error, info, trace, warn};
 use rayon::prelude::*;
 use serialport::{Error, SerialPortInfo, SerialPortType};
 use util::configure_logging;
@@ -358,9 +358,9 @@ pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *cons
 }
 
 /// Executes the `command_1_solid_color` on each tile.
-/// 
+///
 /// The execution of the command on each tile is done concurrently.
-/// 
+///
 /// ## Parameters
 /// - this: a mutable pointer to the ContourWallCore object
 /// - red: 8-bit value of color red
@@ -391,7 +391,7 @@ pub extern "C" fn drop(this: *mut ContourWallCore) {
             std::mem::drop(cw);
 
             let tiles: Vec<Tile> =
-            Vec::from_raw_parts((*this).tiles_ptr, (*this).tiles_len, (*this).tiles_len);
+                Vec::from_raw_parts((*this).tiles_ptr, (*this).tiles_len, (*this).tiles_len);
             std::mem::drop(tiles);
         }
     }

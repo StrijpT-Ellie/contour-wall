@@ -103,7 +103,13 @@ mod tests {
         let framebuffers = split_framebuffer(framebuffer);
 
         for (i, framebuffer) in framebuffers.iter().enumerate() {
-            assert_eq!(framebuffer.len(), 1200, "Framebuffer at index: {}, has a length of {} not 1200", i, framebuffer.len())
+            assert_eq!(
+                framebuffer.len(),
+                1200,
+                "Framebuffer at index: {}, has a length of {} not 1200",
+                i,
+                framebuffer.len()
+            )
         }
     }
 
@@ -111,12 +117,12 @@ mod tests {
     fn test_split_framebuffer() {
         let framebuffer: &mut [u8] = &mut [0; 7200];
 
-        framebuffer[0] = 1;    
-        framebuffer[60] = 2;   
-        framebuffer[2400] = 3; 
-        framebuffer[2460] = 4; 
-        framebuffer[4800] = 5; 
-        framebuffer[4860] = 6; 
+        framebuffer[0] = 1;
+        framebuffer[60] = 2;
+        framebuffer[2400] = 3;
+        framebuffer[2460] = 4;
+        framebuffer[4800] = 5;
+        framebuffer[4860] = 6;
 
         let framebuffers = split_framebuffer(framebuffer);
 
