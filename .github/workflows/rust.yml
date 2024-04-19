@@ -14,8 +14,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Change directory to cw-core
-        run: cd ./lib/cw-core
+        run: cd lib/cw-core/
 
+      - name: Print Working Directory
+        run: pwd
+    
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
