@@ -2,6 +2,11 @@
 name = "contourwall_core"
 version = "0.1.0"
 edition = "2021"
+authors = ["Wouter Pennings"]
+description = "contourwall_core provides an interface for controlling the tiles using the ContourWall protocol over serial communication"
+repository = "https://github.com/StrijpT-Ellie/contour-wall"
+license = "MIT"
+rust-version = "1.75"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,6 +18,3 @@ overflow-checks = false
 
 [dependencies]
 serialport = "4.3.0"
-rayon = "1.10.0"
-log = "0.4"
-env_logger = "0.9"
