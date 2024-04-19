@@ -10,25 +10,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - uses: actions/checkout@v2  # Checkout code
+      with:
+          path: ./lib/cw-core  # Checkout into ./lib/cw-core directory
+          working-directory: ./lib/cw-core  # Set working directory to ./lib/cw-core
 
-      - name: Change directory to cw-core
-        run: cd lib/cw-core/
-
-      - name: Print Working Directory
-        run: pwd
-    
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
+    - uses: actions-rs/toolchain@v1  # Install Rust
+      with:
           toolchain: stable
 
-      - name: Cargo Check
-        run: cargo check --release
+    - name: Cargo Check
+      run: cargo check --release
 
-      - name: Cargo Build
-        run: cargo build --release
+    - name: Cargo Build
+      run: cargo build --release
 
-      - name: Cargo Test
-        run: cargo test --release util
+    - name: Cargo Test
+      run: cargo test --release util
