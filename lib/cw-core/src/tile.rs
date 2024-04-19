@@ -77,6 +77,12 @@ impl Tile {
             return StatusCode::ErrorInternal;
         }
 
+        for i in (0..self.previous_framebuffer.len()).step_by(3) {
+            self.previous_framebuffer[i] = red;
+            self.previous_framebuffer[i+1] = green;
+            self.previous_framebuffer[i+2] = blue;
+        }
+
         // Read response of tile
         let read_buf = &mut [0; 1];
         if self.read_from_serial(read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
@@ -101,15 +107,17 @@ impl Tile {
             crc += *byte;
             frame_buffer[self.index_converter_vector[i]] = *byte;
         }
-       
-        let mutated_frame_buffer = extract_mutated_pixels(&mut self.previous_framebuffer,frame_buffer[0..1200].try_into().unwrap());
 
-        // comparing th
+        let comparison_framebuffer = frame_buffer[0..1200].try_into().unwrap();
+        let mutated_frame_buffer = extract_mutated_pixels(&mut self.previous_framebuffer, &comparison_framebuffer);
+        self.previous_framebuffer = comparison_framebuffer;
+        // If there are less then 100 changed pixels then command_3_update_specific_led will be used.
+        // The 100 is an arbitrary limit. This could very well be changed in the future to decide what the optimal limit is.
         if mutated_frame_buffer.len() / 5 < 100 {
             let sent_mutated_frame_buffer: &[u8] = &mutated_frame_buffer;
             return self.command_3_update_specific_led(sent_mutated_frame_buffer);
         }
-
+        
 
         frame_buffer[1200] = crc;
 
