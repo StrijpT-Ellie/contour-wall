@@ -58,17 +58,21 @@ pub fn split_framebuffer(framebuffer: &[u8]) -> Vec<Vec<u8>> {
     framebuffers
 }
 
-pub fn get_different_framebuffer(previous_framebuffer: &mut [u8], framebuffer: &[u8]) -> Vec<u8> {
-    //handle incomparable frambuffer
-    if previous_framebuffer.len() != framebuffer.len() {
-        return vec![0]; //error
-    }
-
-    //handle invalid buffer
-    if previous_framebuffer.len() % 3 != 0 {
-        return vec![0];
-    }
-
+/*
+  description:
+    The function extracts the mutated pixels between the previous and new framebuffers. 
+    After that, it updates the previous framebuffers following the new one, so that it can be used as a log for the next mutated pixels checking.
+    Argument: 
+      - previous_framebuffer: the previous log of the pixel framebuffer -type: &mut [u8,1200]
+      - current_framebuffer: the current newly updated pixel framebuffer - type: &[u8,1200]
+    return: 
+      - it returns to a vector of mutated pixels.
+    
+*/
+pub fn extract_mutated_pixels(
+    previous_framebuffer: &mut [u8; 1200],
+    framebuffer: &[u8; 1200],
+) -> Vec<u8> {
     let mut different_framebuffer_vector: Vec<u8> = vec![];
 
     let frame_length = previous_framebuffer.len();
@@ -94,19 +98,16 @@ pub fn get_different_framebuffer(previous_framebuffer: &mut [u8], framebuffer: &
 }
 
 pub fn get_pixel_index(index: usize) -> [u8; 2] {
-    if index % 3 != 0 {
-        return [0u8; 2];
-    }
-
+    assert_eq!(index % 3, 0, "index must be divisible by 3");
+   
     let index = index / 3;
-    
-    //limited in 2 bytes
-    if index > 65535 {
+
+    //limited to the toatal number of the total pixels on the tile - 400 pixels
+    if index > 399 {
         return [0u8; 2];
     }
 
     let pixel_index: [u8; 2] = (index as u16).to_be_bytes();
-
 
     return pixel_index;
 }
@@ -114,164 +115,85 @@ pub fn get_pixel_index(index: usize) -> [u8; 2] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-        #[test]
-        fn test_diff_framebuffer_empty_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [1, 2, 3];
-            let current_framebuffer: &mut [u8] = &mut [1, 2, 3];
 
-            let expected_different_framebuffer: Vec<u8> = vec![];
+    #[test]
+    fn test_extract_mutated_framebuffer_empty_case() {
+        //arrange
+        let previous_framebuffer = &mut [0u8; 1200];
+        let current_framebuffer = &mut [0u8; 1200];
 
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
+        let expected_mutated_framebuffer: Vec<u8> = vec![];
 
-            //assert
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
+        //action
+        let mutated_framebuffer = extract_mutated_pixels(previous_framebuffer, current_framebuffer);
 
-        #[test]
-        fn test_diff_framebuffer_one_pixel_is_updated_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [1, 2, 3];
-            let current_framebuffer: &mut [u8] = &mut [4, 5, 6];
+        //assert
+        assert_eq!(
+            mutated_framebuffer, expected_mutated_framebuffer,
+            "the result_different_frambuffer is wrong: {:?}",
+            mutated_framebuffer
+        );
+    }
 
-            let expected_different_framebuffer = vec![0, 0, 4, 5, 6];
+    #[test]
+    fn test_diff_framebuffer_the_first_pixel_is_updated_case() {
+        //arrange
+        let previous_framebuffer = &mut [0u8; 1200];
+        let current_framebuffer = &mut [0u8; 1200];
+        current_framebuffer[0..3].copy_from_slice(&[1u8; 3]);
 
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
+        let expected_mutated_framebuffer: Vec<u8> = vec![0, 0, 1, 1, 1];
 
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
+        //action
+        let mutated_framebuffer = extract_mutated_pixels(previous_framebuffer, current_framebuffer);
 
-        #[test]
-        fn test_diff_framebuffer_all_5_pixel_are_updated_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
-            let current_framebuffer: &mut [u8] = &mut [5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9];
+        //assert
+        assert_eq!(
+            mutated_framebuffer, expected_mutated_framebuffer,
+            "the result_different_frambuffer is wrong: {:?}",
+            mutated_framebuffer
+        );
+    }
 
-            let expected_different_framebuffer = vec![
-                0, 0, 5, 5, 5, 0, 1, 6, 6, 6, 0, 2, 7, 7, 7, 0, 3, 8, 8, 8, 0, 4, 9, 9, 9,
-            ];
+    #[test]
+    fn test_diff_framebuffer_the_last_pixel_is_updated() {
+        //arrange
+        let previous_framebuffer = &mut [0u8; 1200];
+        let current_framebuffer = &mut [0u8; 1200];
+        current_framebuffer[1197..1200].copy_from_slice(&[1u8; 3]);
 
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
+        let expected_mutated_framebuffer: Vec<u8> = vec![0x1, 0x8F, 1, 1, 1];
 
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
+        //action
+        let mutated_framebuffer = extract_mutated_pixels(previous_framebuffer, current_framebuffer);
 
-        #[test]
-        fn test_diff_framebuffer_last_pixel_is_updated_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
-            let current_framebuffer: &mut [u8] = &mut [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 9, 9, 9];
+        //assert
+        assert_eq!(
+            mutated_framebuffer, expected_mutated_framebuffer,
+            "the result_different_frambuffer is wrong: {:?}",
+            mutated_framebuffer
+        );
+    }
 
-            let expected_different_framebuffer = vec![0, 4, 9, 9, 9];
+    #[test]
+    fn test_diff_framebuffer_the_first_and_last_pixel_are_updated_case() {
+        //arrange
+        let previous_framebuffer = &mut [0u8; 1200];
+        let current_framebuffer = &mut [0u8; 1200];
+        current_framebuffer[0..3].copy_from_slice(&[1u8; 3]);
+        current_framebuffer[1197..1200].copy_from_slice(&[1u8; 3]);
 
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
+        let expected_mutated_framebuffer: Vec<u8> = vec![0, 0, 1, 1, 1, 0x1, 0x8F, 1, 1, 1];
 
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
+        //action
+        let mutated_framebuffer = extract_mutated_pixels(previous_framebuffer, current_framebuffer);
 
-        #[test]
-        fn test_diff_framebuffer_first_pixel_is_updated_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
-            let current_framebuffer: &mut [u8] = &mut [2, 2, 2, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
-
-            let expected_different_framebuffer = vec![0, 0, 2, 2, 2];
-
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
-
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
-
-        #[test]
-        fn test_diff_framebuffer_the_first_and_last_pixel_are_updated_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
-            let current_framebuffer: &mut [u8] = &mut [2, 2, 2, 1, 1, 1, 2, 2, 2, 3, 3, 3, 9, 9, 9];
-
-            let expected_different_framebuffer = vec![0, 0, 2, 2, 2, 0, 4, 9, 9, 9];
-
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
-
-            //assert
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
-
-        #[test]
-        fn test_diff_framebuffer_incomparable_buffers_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4];
-            let current_framebuffer: &mut [u8] = &mut [2, 2, 2, 1, 1, 1, 2, 2, 2, 3, 3, 3];
-
-            let expected_different_framebuffer = vec![0];
-
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
-
-            //assert
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
-
-        #[test]
-        fn test_diff_framebuffer_invalid_buffers_case() {
-            //arrange
-            let previous_framebuffer: &mut [u8] = &mut [0, 0, 0, 1];
-            let current_framebuffer: &mut [u8] = &mut [2, 2, 2, 1];
-
-            let expected_different_framebuffer = vec![0];
-
-            //action
-            let different_framebuffer =
-                get_different_framebuffer(previous_framebuffer, current_framebuffer);
-
-            //assert
-            assert_eq!(
-                different_framebuffer, expected_different_framebuffer,
-                "the result_different_frambuffer is wrong: {:?}",
-                different_framebuffer
-            );
-        }
+        //assert
+        assert_eq!(
+            mutated_framebuffer, expected_mutated_framebuffer,
+            "the result_different_frambuffer is wrong: {:?}",
+            mutated_framebuffer
+        );
     }
 
     #[test]
@@ -307,7 +229,7 @@ mod tests {
             index_pixel
         );
     }
-    
+
     #[test]
     fn test_get_pixel_index_256() {
         //arrange
@@ -324,12 +246,12 @@ mod tests {
             index_pixel
         );
     }
- 
+
     #[test]
-    fn test_get_pixel_index_smaller_than_65535() {
+    fn test_get_pixel_index_smaller_than_399() {
         //arrange
-        let index: usize = 511 * 3;
-        let expected_pixel_index: [u8; 2] = [1, 255];
+        let index: usize = 300 * 3;
+        let expected_pixel_index: [u8; 2] = [0x01, 0x2C];
 
         //action
         let index_pixel = get_pixel_index(index);
@@ -345,8 +267,8 @@ mod tests {
     #[test]
     fn test_get_pixel_index_maximum() {
         //arrange
-        let index: usize = 65535 * 3;
-        let expected_pixel_index: [u8; 2] = [255, 255];
+        let index: usize = 399 * 3;
+        let expected_pixel_index: [u8; 2] = [0x1, 0x8F];
 
         //action
         let index_pixel = get_pixel_index(index);
@@ -358,22 +280,5 @@ mod tests {
             index_pixel
         );
     }
-   
-    #[test]
-    fn test_get_pixel_index_out_of_range() {
-        //arrange
-        let index: usize = 65536 * 3 ;
-        let expected_pixel_index: [u8; 2] = [0, 0];
 
-        //action
-        let index_pixel = get_pixel_index(index);
-
-        //assert
-        assert_eq!(
-            index_pixel, expected_pixel_index,
-            "the result of the index pixel is wrong{:?}",
-            index_pixel
-        );
-
-        
 }

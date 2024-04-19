@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     status_code::StatusCode,
-    util::{generate_index_conversion_vector, get_different_framebuffer, millis_since_epoch},
+    util::{generate_index_conversion_vector, extract_mutated_pixels, millis_since_epoch},
 };
 use serialport::SerialPort;
 
@@ -92,14 +92,7 @@ impl Tile {
             return StatusCode::ErrorInternal;
         }
 
-        let different_frame_buffer = get_different_framebuffer(&mut self.previous_framebuffer,frame_buffer_unordered);
-
-        //check to use command 2 or command 3
-        if different_frame_buffer.len() / 5 < 100 {
-            let send_different_frame_buffer: &[u8] = &different_frame_buffer;
-            return self.command_3_update_specific_led(send_different_frame_buffer);
-        }
-
+     
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
         let mut frame_buffer = [0; 1201];
         let mut crc: u8 = 0;
@@ -108,6 +101,16 @@ impl Tile {
             crc += *byte;
             frame_buffer[self.index_converter_vector[i]] = *byte;
         }
+       
+        let mutated_frame_buffer = extract_mutated_pixels(&mut self.previous_framebuffer,frame_buffer[0..1200].try_into().unwrap());
+
+        // comparing th
+        if mutated_frame_buffer.len() / 5 < 100 {
+            let sent_mutated_frame_buffer: &[u8] = &mutated_frame_buffer;
+            return self.command_3_update_specific_led(sent_mutated_frame_buffer);
+        }
+
+
         frame_buffer[1200] = crc;
 
         // Write framebuffer over serial to tile
