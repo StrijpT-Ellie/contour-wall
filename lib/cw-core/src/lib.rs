@@ -330,7 +330,7 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
 /// - this: a mutable pointer to the ContourWallCore object
 /// - frame_buffer_ptr: pointer to framebuffer. If Contour Wall is in 6 tile mode the framebuffer is expected to be 7200 bytes big. In one tile mode, it is expected to be 1200 bytes big.
 #[no_mangle]
-pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8) {
+pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8, optimize: bool) {
     let buffer_size = 1200 * this.tiles_len;
 
     let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, buffer_size) };
@@ -341,12 +341,12 @@ pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *cons
         let tile = tiles
             .first_mut()
             .expect("There should at least be one tile");
-        let _status_code = tile.command_2_update_all(frame_buffer);
+        let _status_code = tile.command_2_update_all(frame_buffer, optimize);
     } else if this.tiles_len == 6 {
         let frame_buffers = util::split_framebuffer(frame_buffer);
 
         tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
-            let _status_code = tile.command_2_update_all(frame_buffers[i].as_slice());
+            let _status_code = tile.command_2_update_all(frame_buffers[i].as_slice(), optimize);
         });
     } else {
         error!(

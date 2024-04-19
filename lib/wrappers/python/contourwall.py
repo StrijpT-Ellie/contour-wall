@@ -43,7 +43,7 @@ class ContourWall:
         self._show.argtypes = [ctypes.POINTER(ContourWallCore)]
 
         self._update_all = self.__lib.update_all
-        self._update_all.argtypes = [ctypes.POINTER(ContourWallCore), ctypes.POINTER(c_uint8)]
+        self._update_all.argtypes = [ctypes.POINTER(ContourWallCore), ctypes.POINTER(c_uint8), c_bool]
 
         self._solid_color = self.__lib.solid_color
         self._solid_color.argtypes = [ctypes.POINTER(ContourWallCore), c_uint8, c_uint8, c_uint8]
@@ -75,7 +75,7 @@ class ContourWall:
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
-    def show(self, sleep_ms:int=0):
+    def show(self, sleep_ms:int=0, optimize:bool=True):
         """
         Update each single LED on the ContourWallCore with the pixel data in 'cw.pixels'.
         
@@ -87,7 +87,7 @@ class ContourWall:
         """
         
         ptr = ctypes.cast(self.pixels.tobytes(), ctypes.POINTER(ctypes.c_uint8))
-        self._update_all(ctypes.byref(self._cw_core), ptr)
+        self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
         self.pushed_frames += 1
         time.sleep(sleep_ms/1000)

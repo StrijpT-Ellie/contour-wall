@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::{
     status_code::StatusCode,
-    util::{generate_index_conversion_vector, millis_since_epoch},
+    util::{generate_index_conversion_vector, extract_mutated_pixels, millis_since_epoch},
 };
 use log::error;
 use serialport::SerialPort;
@@ -21,6 +21,7 @@ pub struct Tile {
     last_serial_write_time: u64,
     port: Box<dyn SerialPort>,
     index_converter_vector: [usize; 1200],
+    previous_framebuffer: [u8; 1200],
 }
 
 impl Tile {
@@ -58,6 +59,7 @@ impl Tile {
             frame_time: 15,
             last_serial_write_time: 0,
             index_converter_vector: generate_index_conversion_vector(),
+            previous_framebuffer: [0u8; 1200],
         };
 
         let magic_numbers = tile.command_6_magic_numbers()[0..5]
@@ -151,6 +153,12 @@ impl Tile {
             return StatusCode::ErrorInternal;
         }
 
+        for i in (0..self.previous_framebuffer.len()).step_by(3) {
+            self.previous_framebuffer[i] = red;
+            self.previous_framebuffer[i+1] = green;
+            self.previous_framebuffer[i+2] = blue;
+        }
+
         // Read response of tile
         let read_buf = &mut [0; 1];
         if self.read_from_serial(read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
@@ -186,7 +194,7 @@ impl Tile {
     ///
     /// let status_code = tile.command_2_update_all(framebuffer);
     /// ```
-    pub fn command_2_update_all(&mut self, frame_buffer_unordered: &[u8]) -> StatusCode {
+    pub fn command_2_update_all(&mut self, frame_buffer_unordered: &[u8], optimize: bool) -> StatusCode {
         let timespan = millis_since_epoch() - self.last_serial_write_time;
         if timespan < self.frame_time.into() {
             std::thread::sleep(Duration::from_millis((self.frame_time as u64) - timespan));
@@ -205,6 +213,22 @@ impl Tile {
             frame_buffer[self.index_converter_vector[i]] = *byte;
         }
         frame_buffer[1200] = crc;
+
+        // If the user opts in into protocol optimization, then a check will be done how different their current framebuffer is to the previous one.
+        // If the framebuffer is similar enough (defined below) then a different command will be used to transfer the pixel values.
+        // This optimization could allow for a bit faster frametimes.
+        if optimize {
+            let comparison_framebuffer = frame_buffer[0..1200].try_into().unwrap();
+            let mutated_frame_buffer = extract_mutated_pixels(&mut self.previous_framebuffer, &comparison_framebuffer);
+            self.previous_framebuffer = comparison_framebuffer;
+            // If there are less then 100 changed pixels then command_3_update_specific_led will be used.
+            // The 100 is an arbitrary limit. This could very well be changed in the future to decide what the optimal limit is.
+            if mutated_frame_buffer.len() / 5 < 100 {
+                let sent_mutated_frame_buffer: &[u8] = &mutated_frame_buffer;
+                return self.command_3_update_specific_led(sent_mutated_frame_buffer);
+            }
+    
+        }
 
         // Write framebuffer over serial to tile
         if self.write_over_serial(&frame_buffer).is_err() {
