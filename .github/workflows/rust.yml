@@ -1,0 +1,31 @@
+name: Rust Unit Tests
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Change directory to cw-core
+        run: cd ./lib/cw-core
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Cargo Check
+        run: cargo check --release
+
+      - name: Cargo Build
+        run: cargo build --release
+
+      - name: Cargo Test
+        run: cargo test --release util

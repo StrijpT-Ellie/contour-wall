@@ -69,7 +69,7 @@
 
 use std::ffi::c_char;
 
-use log::{debug, error, info, trace, warn};
+use log::{  error, info, trace, warn};
 use rayon::prelude::*;
 use serialport::{Error, SerialPortInfo, SerialPortType};
 use util::configure_logging;
@@ -377,7 +377,7 @@ pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, bl
         unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
 
     tiles.par_iter_mut().for_each(|tile| {
-        let status_code = tile.command_1_solid_color(red, green, blue);
+        let _status_code = tile.command_1_solid_color(red, green, blue);
     });
 }
 

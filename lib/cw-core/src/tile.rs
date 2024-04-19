@@ -1,7 +1,6 @@
 //! Tile struct and implementation. This struct implements the protocol to communicate with individual tiles.
 
-use std::time::{Duration, Instant};
-use std::{thread, time};
+use std::time::Duration;
 
 use crate::{
     status_code::StatusCode,
