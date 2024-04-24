@@ -10,11 +10,13 @@ This repository contains: research, designs, source code and documention of the 
 
 ## Directory Structure
 
-- `firmware/`: The firmware for the tiles, running on ESP32's. Implements protocol and controls PCB's.
-- `lib/`: The library to control the Contour Wall
-- `font/`: A custom low-res font for the Contour Wall, including util functions
 - `pcb/`: Information and design of the PCB's, such as: dimensions, electrical properties. All the design files of the PCB are also in there.
+- `firmware/`: The firmware for the tiles, running on ESP32's. Implements protocol and controls PCB's.
+- `font/`: A custom low-res font for the Contour Wall, including util functions
+- `img/`: Images used in the repository
+- `lib/`: The library to control the Contour Wall
 - `research/`: All the research scripts, mostly regarding contour extraction from video feed.
+- `scripts/`: Extra script for a variety of use cases
   
 ## Contributors
 
