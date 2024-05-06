@@ -114,32 +114,32 @@ class ContourWall:
 
         self._drop(ctypes.byref(self._cw_core))
 
-def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
-    h /= 255
-    s /= 255
-    v /= 255
+def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int]:
+    hue_float: float = hue/255
+    saturation /= 255
+    value /= 255
 
-    if s == 0.0:
-        return int(v * 255), int(v * 255), int(v * 255)
+    if saturation == 0.0:
+        return int(value * 255), int(value * 255), int(value * 255)
 
-    i = int(h * 6.)  # segment number (0 to 5)
-    f = (h * 6.) - i  # fractional part of h
-    p = v * (1. - s)
-    q = v * (1. - s * f)
-    t = v * (1. - s * (1. - f))
+    i = int(hue_float * 6.)  # saturationegment number (0 to 5)
+    f = (hue_float * 6.) - i  # fractional part of hue_float
+    p = value * (1. - saturation)
+    q = value * (1. - saturation * f)
+    t = value * (1. - saturation * (1. - f))
 
     if i == 0:
-        return int(v * 255), int(t * 255), int(p * 255)
+        return int(value * 255), int(t * 255), int(p * 255)
     elif i == 1:
-        return int(q * 255), int(v * 255), int(p * 255)
+        return int(q * 255), int(value * 255), int(p * 255)
     elif i == 2:
-        return int(p * 255), int(v * 255), int(t * 255)
+        return int(p * 255), int(value * 255), int(t * 255)
     elif i == 3:
-        return int(p * 255), int(q * 255), int(v * 255)
+        return int(p * 255), int(q * 255), int(value * 255)
     elif i == 4:
-        return int(t * 255), int(p * 255), int(v * 255)
+        return int(t * 255), int(p * 255), int(value * 255)
     else:
-        return int(v * 255), int(p * 255), int(q * 255)
+        return int(value * 255), int(p * 255), int(q * 255)
 
 def check_comport_existence(COMports) -> bool:
     """Check for existing COM ports"""
