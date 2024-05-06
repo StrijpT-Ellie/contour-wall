@@ -51,12 +51,7 @@ class ContourWall:
         self._drop = self.__lib.drop
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
 
-        if any(port.device == COMport for port in serial.tools.list_ports.comports()):
-            self._cw_core = self._new(COMport.encode(), baud_rate)
-        else:
-            raise Exception(f"COM port \"{COMport}\", does not exist")
-            
-        self.pixels: np.array = np.zeros((20, 20, 3), dtype=np.uint8)
+        self.pixels: np.ndarray = np.zeros((20, 20, 3), dtype=np.uint8)
         self.pushed_frames: int = 0
 
     def new(self, baudrate=2_000_000):
@@ -64,7 +59,7 @@ class ContourWall:
 
         self._cw_core = self._new(baudrate)
 
-    def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate=2_000_000):
+    def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate: int =2_000_000):
         """Create a new instance of ContourWallCore with 6 tiles"""
 
         if check_comport_existence([port1, port2, port3, port4, port5, port6]):
@@ -72,7 +67,7 @@ class ContourWall:
         else:
             raise Exception(f"one of the COM ports does not exist")
 
-    def single_new_with_port(self, port: str, baudrate=2_000_000):
+    def single_new_with_port(self, port: str, baudrate: int =2_000_000):
         """Create a new instance of ContourWallCore with 1 tile"""
 
         if check_comport_existence([port]):
@@ -91,7 +86,7 @@ class ContourWall:
         cw.show()
         """
         
-        ptr = ctypes.cast(self.pixels.tobytes(), ctypes.POINTER(ctypes.c_uint8))
+        ptr = (ctypes.c_uint8 * self.pixels.size).from_buffer(self.pixels)
         self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
         self.pushed_frames += 1
