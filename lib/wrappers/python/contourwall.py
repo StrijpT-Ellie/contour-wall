@@ -50,11 +50,6 @@ class ContourWall:
 
         self._drop = self.__lib.drop
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
-
-        if any(port.device == COMport for port in serial.tools.list_ports.comports()):
-            self._cw_core = self._new(COMport.encode(), baud_rate)
-        else:
-            raise Exception(f"COM port \"{COMport}\", does not exist")
             
         self.pixels: np.array = np.zeros((20, 20, 3), dtype=np.uint8)
         self.pushed_frames: int = 0
