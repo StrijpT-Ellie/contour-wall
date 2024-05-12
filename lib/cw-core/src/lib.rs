@@ -1,15 +1,32 @@
 //! This library provides an interface for controlling the tiles using the ContourWall protocol over serial communication
 //! with an ESP32 device mounted on each tile of the ContourWall.
 //!
-//! The ContourWallCore struct represents the core functionality, allowing you to initialize a connection to a COM port, 
+//! The ContourWallCore struct represents the core functionality, allowing you to initialize a connection to a COM port,
 //! send commands to update LED colors, retrieve tile identifiers, and more.
 //!
 //! For more details on available commands and usage, refer to the individual function documentation.
 //!
 //! # Example Usage
 //!
-//! To utilize this library, ensure you have the necessary serial port permissions 
+//! To utilize this library, ensure you have the necessary serial port permissions
 //! and ESP32 firmware flashed with the ContourWall protocol support.
+//!
+//! ## Full Contour Wall mode (6 tiles)
+//!
+//! ```rust
+//! use std::ffi::CString;
+//! use contourwall_core::*;
+//!
+//! fn main() {
+//!     let baud_rate = 2_000_000;
+//!     let mut cw = new(baud_rate);
+//!
+//!     solid_color(&mut cw, 255, 0, 255); // Sets all LEDs to purple
+//!     show(&mut cw); // Shows the changes on the LED tiles
+//! }
+//! ```
+//!
+//! ## Single tile mode
 //!
 //! ```rust
 //! use std::ffi::CString;
@@ -17,469 +34,367 @@
 //!
 //! fn main() {
 //!     let com_port = CString::new("/dev/ttyUSB3").expect("CString conversion failed").into_raw();
-//!     let baud_rate = 921_600;
-//!     let mut cw = new(com_port, baud_rate);
+//!     let baud_rate = 2_000_000;
+//!     let mut cw = single_new_with_port(com_port, baud_rate);
 //!
-//!     let status_code = command_1_solid_color(&mut cw, 255, 0, 255); // Sets all LEDs to purple
-//!     assert_eq!(status_code, StatusCode::Ok.as_u8());
-//!
-//!     let status_code = command_0_show(&mut cw); // Shows the changes on the LED tiles
-//!     assert_eq!(status_code, StatusCode::Ok.as_u8());
+//!     solid_color(&mut cw, 255, 0, 255); // Sets all LEDs to purple
+//!     show(&mut cw); // Shows the changes on the LED tiles
 //! }
 //! ```
 //!
 //! # Compatibility
 //!
-//! This library is compatible with both Windows and Linux systems, It has been tested on Windows devices and a 
+//! This library is compatible with both Windows and Linux systems, It has been tested on Windows devices and a
 //! Raspberry Pi 5. MacOS is untested, however it should work.
 //!
 //! # Errors
 //!
-//! Errors encountered during serial communication or protocol execution are indicated 
+//! Errors encountered during serial communication or protocol execution are indicated
 //! through StatusCode values returned by the library functions.
 //!
 //! # Safety
 //!
-//! This library uses unsafe Rust code to interface with C-style pointers and raw bytes for serial communication. 
+//! This library uses unsafe Rust code to interface with C-style pointers and raw bytes for serial communication.
 //! Extra care should be taken to ensure proper usage to avoid memory unsafety and undefined behavior.
 //!
 //! # Protocol Documentation
 //!
-//! This library assumes adherence to the ContourWall protocol. 
+//! This library assumes adherence to the ContourWall protocol.
 //! Please refer to the protocol documentation for more information on commands and their expected behavior.
 //!
 //! # License
 //!
-//! This library is distributed under the terms of the MIT license. 
+//! This library is distributed under the terms of the MIT license.
 //! See the [LICENSE](https://github.com/StrijpT-Ellie/contour-wall/blob/main/LICENSE) file for details.
 
-use std::ffi::{c_char, CStr};
-use std::time::{Duration, SystemTime};
-use serialport::SerialPort;
+use std::ffi::c_char;
 
-type StatusCodeAlias = u8;
-type SerialPointerAlias = *mut Box<dyn SerialPort>;
+use log::{error, info, trace, warn};
+use rayon::prelude::*;
+use serialport::{Error, SerialPortInfo, SerialPortType};
+use util::configure_logging;
 
-/// Enum abstraction over the StatusCodes used signal the status of the ESP32.
-pub mod status_code; 
-use status_code::StatusCode;
+use tile::Tile;
 
-/// ContourWallCore encapsulates the essential elements required for communication with LED tiles, including timing parameters and the serial port connection.
+use crate::status_code::StatusCode;
+
+pub mod status_code;
+pub mod tile;
+pub mod util;
+
+/// ContourWallCore class encapsulates the list of connected tiles.
 #[repr(C)]
 #[derive(Debug)]
 pub struct ContourWallCore {
-    /// The minimum time between between frames pushed to a tile. Default values is 33ms (33fps)
-    pub frame_time: u64,    
-    /// Last time since frame as pushed to tile. Stored as amount of milliseconds since Linux EPOCH
-    pub last_serial_write_time: u64, 
-    /// The serial COM port connected to a ESP32 (tile)
-    pub serial: SerialPointerAlias,
-} 
+    pub tiles_ptr: *mut Tile,
+    pub tiles_len: usize,
+}
 
-/// Creates a new instance of the ContourWallCore struct.
-/// 
+/// Initializes the full ContourWall, all the configuration and orchistration happens automatically.
+///
+/// This sets up the ContourWall automatically. It checks each COM port to see if it is part of
+/// the ContourWall. If the magic numbers are correct, the COM port is a tile. Then it asks each
+/// tile for its identifier, which is the location on the wall. Based on that identifier,
+/// the library knows which COM port is which tile. This lets the library know where to send
+/// each part of a framebuffer to the right COM port.
+///
 /// ## Parameters
-/// - com_port: Device name of the COM port
-///     - Example Device name: `/dev/ttyUSB3` (Linux), `COM3` (Windows)
-/// - baudrate: The speed of the UART connection
-///     - Expected speed is 921.600 MHz
-///     - If you use a different speed, you need to flash new firmware to the ESP32
-/// 
-/// ## Return
-/// - Returns an initialized ContourWallCore struct
-/// 
-/// ## Example
-/// ```
-/// let com_string: *const c_char = CString::new("COM16").unwrap().into_raw();
-/// let baud_rate: u32 = 921_600
-/// 
-/// let cw: ContourWallCore = new(com_string, baud_rate);
-/// ```
+/// - baudrate: an unsigned 32bit integer, default value of 2.000.000
+///
+/// ## Returns
+/// The initialized ContourWall is returned.
 #[no_mangle]
-pub extern "C" fn new(com_port: *const c_char, baudrate: u32) -> ContourWallCore {
-    let serial = serialport::new(str_ptr_to_string(com_port), baudrate)
-        .timeout(Duration::from_secs(0))
-        .stop_bits(serialport::StopBits::One)
-        .parity(serialport::Parity::None)
-        .open()
-        .expect(format!("[CW CORE ERROR] Could not open COM port: {}", str_ptr_to_string(com_port)).as_str());
+pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
+    fn error_handler(e: Error) -> Vec<SerialPortInfo> {
+        error!("{}", e);
+        Vec::new()
+    }
+
+    let ports = serialport::available_ports().unwrap_or_else(error_handler);
+
+    // This could be written more optimally like this:
+    // let tiles: Vec<Option<Tile>> = vec![None; 6];
+    // but, that does not work due to .clone() not being implemented for Tile
+    // .clone() cannot be implemented for Tile, due to the Tile::Port field.
+    let mut tiles: Vec<Option<Tile>> = Vec::with_capacity(6);
+    for _ in 0..6 {
+        tiles.push(None);
+    }
+
+    for port in ports {
+        let SerialPortType::UsbPort(_) = port.port_type else {
+            trace!("Port: '{}' is a USB port", port.port_name);
+            continue;
+        };
+
+        let tile = Tile::init(port.port_name.clone(), baud_rate);
+        let mut tile = match tile {
+            Ok(tile) => tile,
+            Err(error) => {
+                info!(
+                    "'{}', is not an ELLIE tile, because: {:?}",
+                    port.port_name, error
+                );
+                continue;
+            }
+        };
+
+        let (status_code, identifier) = tile.command_4_get_tile_identifier();
+        if status_code == StatusCode::Ok {
+            tiles[identifier as usize - 1] = Some(tile);
+        }
+    }
+
+    let mut tiles: Vec<Tile> = tiles.into_iter().flat_map(|tile| tile).collect();
+
+    // TODO: Implement actual error that does not crash the program
+    assert_eq!(
+        tiles.len(),
+        6,
+        "[CW CORE ERROR] Only {}/6 tiles were found",
+        tiles.len()
+    );
+
+    let tiles_ptr = tiles.as_mut_ptr();
+    let tiles_len = tiles.len();
+    configure_logging();
+    if !configure_threadpool(tiles_len as u8) {
+        warn!(
+            "Failed to configure the threadpool with {} thread",
+            tiles_len
+        )
+    }
+
+    std::mem::forget(tiles);
 
     ContourWallCore {
-        serial: Box::into_raw(Box::new(serial)) as SerialPointerAlias,
-        frame_time: 33,
-        last_serial_write_time: millis_since_epoch(),
+        tiles_ptr,
+        tiles_len,
     }
 }
 
-/// Executes `command_0_show` of the protocol.
-/// 
-/// This command signals to the tile that the its current framebuffer needs to be displayed or shown.
-/// It expects a `100` or StatusCode::Ok, which is being returned by the tile _before_ it update its LED's.
-/// 
-/// The time in between calls needs to be atleast `ContourWallCore::frame_time` (this), which by default is 33ms.
-/// 
+/// Initializes the full ContourWall, based on manualy input of COM ports.
+///
 /// ## Parameters
-/// - this: mutable pointer to the ContourWallCore struct
-/// 
-/// ## Return
-/// - StatusCode as an `u8` (`uint8_t`)
-/// 
-/// ## Example
-/// ```
-/// let cw: ContourWallCore = new(com_port, baud_rate);
-/// 
-/// let status_code = command_0_show(&mut cw);
-/// ```
+/// - com_port0: Device name of the COM port, 'com_port0' is the top-left tile
+/// - com_port1: Device name of the COM port, 'com_port1' is the top-center tile
+/// - com_port2: Device name of the COM port, 'com_port2' is the top-right tile
+/// - com_port3: Device name of the COM port, 'com_port3' is the bottom-left tile
+/// - com_port4: Device name of the COM port, 'com_port4' is the bottom-center tile
+/// - com_port5: Device name of the COM port, 'com_port5' is the bottom right tile
+/// - baudrate: an unsigned 32bit integer, default value of 2.000.000
+///
+/// ## Returns
+/// The initialized ContourWall is returned.
 #[no_mangle]
-pub extern "C" fn command_0_show(this: &mut ContourWallCore) -> StatusCodeAlias {
-    // Sleeping if the time between "show" commands to too little. The frametimes cannot be shorter than ContourWallCore::frame_time.
-    // This calculates the left over time for the thread to sleep, if any at all.
-    let timespan = millis_since_epoch() - this.last_serial_write_time;
-    if timespan < this.frame_time.into() {
-        std::thread::sleep(Duration::from_millis((this.frame_time as u64) - timespan));
+pub extern "C" fn new_with_ports(
+    com_port0: *const c_char,
+    com_port1: *const c_char,
+    com_port2: *const c_char,
+    com_port3: *const c_char,
+    com_port4: *const c_char,
+    com_port5: *const c_char,
+    baud_rate: u32,
+) -> ContourWallCore {
+    let com_ports = vec![
+        util::str_ptr_to_string(com_port0),
+        util::str_ptr_to_string(com_port1),
+        util::str_ptr_to_string(com_port2),
+        util::str_ptr_to_string(com_port3),
+        util::str_ptr_to_string(com_port4),
+        util::str_ptr_to_string(com_port5),
+    ];
+
+    // Ensure we have exactly 6 ports
+    assert_eq!(com_ports.len(), 6);
+
+    let mut tiles: Vec<Tile> = Vec::with_capacity(6);
+
+    for (i, com_port) in com_ports.into_iter().enumerate() {
+        let tile = Tile::init(com_port.clone(), baud_rate);
+        let tile = match tile {
+            Ok(tile) => tile,
+            Err(error) => {
+                info!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+                continue;
+            }
+        };
+        tiles[i] = tile;
     }
 
-    if write_to_serial_async(this.serial, &[0]).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
+    let tiles_ptr = tiles.as_mut_ptr();
+    let tiles_len = tiles.len();
+    configure_logging();
+    if !configure_threadpool(tiles_len as u8) {
+        warn!(
+            "Failed to configure the threadpool with {} thread",
+            tiles_len
+        )
     }
 
-    this.last_serial_write_time = millis_since_epoch();
+    std::mem::forget(tiles);
 
-    // Read response of tile 
-    // let read_buf = &mut[0; 1];
-    // if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-    //     return StatusCode::ErrorInternal.as_u8()
-    // }
-
-    // read_buf[0]
-
-    StatusCode::Ok.as_u8()
+    ContourWallCore {
+        tiles_ptr,
+        tiles_len,
+    }
 }
 
-/// Executes `command_1_solid_color` of the protocol, which sets *all* pixels on a tile to one specific color.
-/// 
-/// Although possible, the function is not meant for developers to call this function "bare"
-/// The intent of this function is for background optimizations. If the vast majority of the framebuffer is one color, 
-/// than you could execute two protocol commands, E.G. `command_1_solid_color()` and `command_3_update_specific_led`. 
-/// A background optimization could lead to faster frame times.
-/// 
+/// Initializes the ContourWall as a single tile
+///
 /// ## Parameters
-/// - this: mutable pointer to the ContourWallCore struct
+/// - com_port: the device name of the COM port
+/// - baudrate: an unsigned 32bit integer, default value of 2.000.000
+///
+/// ## Returns
+/// The initialized ContourWall is returned.
+#[no_mangle]
+pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) -> ContourWallCore {
+    let com_port = util::str_ptr_to_string(com_port);
+
+    let tile = Tile::init(com_port.clone(), baud_rate);
+    let tile = match tile {
+        Ok(tile) => tile,
+        Err(error) => {
+            error!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+            todo!();
+        }
+    };
+
+    let mut tiles = vec![tile];
+    let tiles_ptr = tiles.as_mut_ptr();
+    let tiles_len = tiles.len();
+    configure_logging();
+    if !configure_threadpool(tiles_len as u8) {
+        error!(
+            "Failed to configure the threadpool with {} thread",
+            tiles_len
+        )
+    }
+
+    std::mem::forget(tiles);
+
+    ContourWallCore {
+        tiles_ptr,
+        tiles_len,
+    }
+}
+
+/// Configures the amount of threads for the Rayon threadpool.
+///
+/// The default threadcount is the amount of tiles connected to the Contour Wall. If the full wall is
+/// initialised then there are 6 threads. If the wall is in single tile mode, then there is only one thread.
+#[no_mangle]
+pub extern "C" fn configure_threadpool(threads: u8) -> bool {
+    if threads > 6 {
+        warn!(
+            "A higher thread count than {}, is unnecessary as there is a maximum of 6 tiles",
+            threads
+        );
+    }
+
+    let res = rayon::ThreadPoolBuilder::new()
+        .num_threads(threads as usize)
+        .build_global();
+    if res.is_err() {
+        error!("Failed to set the threadpool threadcount to: {}", threads);
+    }
+
+    res.is_ok()
+}
+
+/// Executes the `command_0_show` on each tile to show their current framebuffer
+///
+/// The execution of the command on each tile is done concurrently.
+///
+/// ## Parameter
+/// - this: a mutable pointer to the ContourWallCore object
+#[no_mangle]
+pub extern "C" fn show(this: &mut ContourWallCore) {
+    let tiles: &mut [Tile] =
+        unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
+
+    tiles.par_iter_mut().for_each(|tile| {
+        let _status_code = tile.command_0_show();
+    });
+}
+
+/// Executes the `command_2_update_all` on each tile.
+///
+/// If the Contour Wall is in 6 tile mode, the framebuffer first gets split into 6 framebuffers,
+/// one framebuffer for each tile.
+///
+/// The execution of the command on each tile is done concurrently.
+///
+/// ## Parameter
+/// - this: a mutable pointer to the ContourWallCore object
+/// - frame_buffer_ptr: pointer to framebuffer. If Contour Wall is in 6 tile mode the framebuffer is expected to be 7200 bytes big. In one tile mode, it is expected to be 1200 bytes big.
+#[no_mangle]
+pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8, optimize: bool) {
+    let buffer_size = 1200 * this.tiles_len;
+
+    let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, buffer_size) };
+    let tiles: &mut [Tile] =
+        unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
+
+    if this.tiles_len == 1 {
+        let tile = tiles
+            .first_mut()
+            .expect("There should at least be one tile");
+        let _status_code = tile.command_2_update_all(frame_buffer, optimize);
+    } else if this.tiles_len == 6 {
+        let frame_buffers = util::split_framebuffer(frame_buffer);
+
+        tiles.par_iter_mut().enumerate().for_each(|(i, tile)| {
+            let _status_code = tile.command_2_update_all(frame_buffers[i].as_slice(), optimize);
+        });
+    } else {
+        error!(
+            "--> UNREACHABLE <-- Amount of tiles HAS to be either 1 or 6, not '{}'\n EXITING",
+            this.tiles_len
+        );
+        unreachable!();
+    }
+}
+
+/// Executes the `command_1_solid_color` on each tile.
+///
+/// The execution of the command on each tile is done concurrently.
+///
+/// ## Parameters
+/// - this: a mutable pointer to the ContourWallCore object
 /// - red: 8-bit value of color red
 /// - green: 8-bit value of color red
 /// - blue: 8-bit value of color red
-/// 
-/// ## Return
-/// - StatusCode as an `u8` (`uint8_t`)
-/// 
-/// ## Examples
-/// 
-/// Sets all LEDs on tile to purple
-/// ```
-/// let cw: ContourWallCore = new(com_port, baud_rate);
-/// 
-/// let red: u8 = 255;
-/// let green: u8 = 0;
-/// let blue: u8 = 255;
-/// 
-/// let status_code = command_1_solid_color(&mut cw, red, green ,blue);
-/// ```
-/// 
-/// Fades tiles from black to white
-/// ```
-/// let cw: ContourWallCore = new(com_port, baud_rate);
-/// 
-/// for i in 0..255 {
-///     let status_code = command_1_solid_color(&mut cw, i, i ,i);
-/// 
-///     let status_code = command_0_show(&mut cw);
-/// }
-/// ```
 #[no_mangle]
-pub extern "C" fn command_1_solid_color(this: &mut ContourWallCore, red: u8, green: u8, blue: u8) -> StatusCodeAlias {
-    let crc = red.wrapping_add(green).wrapping_add(blue);
-    if write_to_serial_async(this.serial, &[1, red, green, blue, crc]).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
+pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, blue: u8) {
+    // This is the old code that is sequentially written
+    // for tile in this.tiles {
+    //     let _status_code = tile.as_ref().command_1_solid_color(red, green, blue);
+    // }
 
-    // Read response of tile 
-    let read_buf = &mut[0; 1];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
+    let tiles: &mut [Tile] =
+        unsafe { std::slice::from_raw_parts_mut(this.tiles_ptr, this.tiles_len) };
 
-    read_buf[0]
-}
-
-/// Executes `command_2_update_all` of the protocol, sets LED's to individually assigned colors based on index of the RGB values
-/// 
-/// The order of the RGB values is expected to be identical to how they are wired on a tile.
-/// 
-/// ## Warning
-/// 
-/// The size of the framebuffer array needs to be 1200. A red, green and blue value for 400 LEDs.
-/// 
-/// ## Parameters
-/// - this: mutable pointer to the ContourWallCore struct
-/// - frame_buffer_ptr: pointer to the start of the framebuffer array
-/// 
-/// ## Return
-/// - StatusCode as an `u8` (`uint8_t`)
-/// 
-/// ## Example
-/// 
-/// Sets first LED to RED, the rest is set to black (off)
-/// ```
-/// let mut cw = new(com_string, baud_rate);
-/// 
-/// let mut framebuffer = &mut[0; 1200];
-/// framebuffer[0] = 255;
-///
-/// let status_code = command_2_update_all(&mut cw, framebuffer.as_ptr());
-/// ```
-#[no_mangle]
-pub extern "C" fn command_2_update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8) -> StatusCodeAlias {
-    // Indicate to tile that command 2 is about to be executed
-    if write_to_serial_async(this.serial, &[2]).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
-    let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, 1200) };
-    let mut crc: u8 = 0;
-    for byte in frame_buffer {
-        crc += *byte;
-    }
-    let binding = [frame_buffer, &[crc]].concat();
-    let frame_buffer = binding.as_slice();
-
-    // Write framebuffer over serial to tile
-    if write_to_serial_async(this.serial, frame_buffer).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    // Read response of tile 
-    let read_buf = &mut[0; 1];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    read_buf[0]
-}
-
-/// Executes `command_3_update_all` of the protocol, sets some LED's to individually assigned colors based given index with RGB code.
-/// 
-/// For every specific LED being updated, five bytes are needed. Two bytes for the LED index, one byte for red, blue and green.
-/// The index for the LED is stored in [big-endian](https://en.wikipedia.org/wiki/Endianness) format, most significant byte on the smaller address.
-/// 
-/// ## Performance
-/// 
-/// Although the `led_count` can go up to 255, it is recommeneded to not update more then 200 LED's or so with this protocol command.
-/// At around 200 updated LED's, this command will be slower then `command_2_update_all`, 
-/// as less efficient at transferring data and requires more processing time
-/// 
-/// ## Parameters
-/// - this: Mutable pointer to the ContourWallCore struct
-/// - frame_buffer_ptr: Pointer to the start of the framebuffer array
-/// - led_count: Amount of LED indexes and RGB values it contains
-/// 
-/// ## Return
-/// - StatusCode as an `u8` (`uint8_t`)
-/// 
-/// ## Example
-/// 
-/// Sets 4th LED to red, 256th LED to blue
-/// ```
-/// let mut cw = new(com_string, baud_rate);
-/// let framebuffer = &mut[0, 3, 255, 0, 0, 1, 0, 0, 0, 255];
-/// 
-/// let status_code = command_3_update_specific_led(&mut cw, framebuffer.as_ptr(), 2);
-/// ```
-#[no_mangle]
-pub extern "C" fn command_3_update_specific_led(this: &mut ContourWallCore, frame_buffer_ptr: *const u8,  led_count: u8) -> StatusCodeAlias {
-    // Indicate to tile that command 2 is about to be executed
-    if write_to_serial_async(this.serial, &[3]).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    if write_to_serial_async(this.serial, &[led_count, led_count]).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-    
-    // Reading the next
-    let read_buf = &mut[0; 1];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    let status_code = StatusCode::new(read_buf[0]).unwrap();
-    if status_code != StatusCode::Next {
-        return status_code.as_u8();
-    }
-
-    // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
-    let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, (led_count * 5) as usize) };
-    let mut crc: u8 = 0;
-    for byte in frame_buffer {
-        crc += *byte;
-    }
-    let binding = [frame_buffer, &[crc]].concat();
-    let frame_buffer = binding.as_slice();
-
-    // Write framebuffer over serial to tile
-    if write_to_serial_async(this.serial, frame_buffer).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    let read_buf = &mut[0; 1];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    read_buf[0]
-}
-
-/// Executes `command_4_get_tile_identifier` of the protocol. Returns the tile identifier which is set in the EEPROM of the ESP32
-/// 
-/// Returns an `u16` (`uint16_t`), which are two `u8`'s (`uint8_t`) concatinated. 
-/// The eight right-most bites are the StatusCode, the eight left-most bits are the actual identifier.
-/// 
-/// ## Example
-/// ```
-/// let mut cw = new(com_string, baud_rate);
-/// 
-/// let response = command_4_get_tile_identifier(&mut cw);
-/// 
-/// let status_code = (response & 255) as u8;
-/// let identifier = (response >> 8) as u8;
-/// ```
-#[no_mangle]
-pub extern "C" fn command_4_get_tile_identifier(this: &mut ContourWallCore) -> u16 {
-    if write_to_serial_async(this.serial, &[4]).is_err() {
-        return StatusCode::ErrorInternal.as_u8() as u16;
-    }
-    
-    let read_buf = &mut[0; 8];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[1]).is_none() {
-        return StatusCode::ErrorInternal.as_u8() as u16;
-    }
-    
-    let status_code = if StatusCode::new(read_buf[7]).is_none() {
-        StatusCode::ErrorInternal.as_u8()
-    } else {
-        read_buf[7]
-    };
-
-    let magic_numbers = read_buf[0..5].iter().map(|&x| x as char).collect::<String>();
-
-    if magic_numbers != String::from("Ellie") {
-        StatusCode::NotACWPort.as_u8() as u16 // This COM port is not part of the ContourWall, because the magic numbers are not ELLIE
-    } else if read_buf[5] != read_buf[6] {
-        StatusCode::NonMatchingCRC.as_u8() as u16
-    } else {
-        ((read_buf[6] as u16) << 8) + (status_code as u16)
-    } 
-}
-
-/// Executes `command_5_set_tile_identifier` of the protocol. Sets a new tile identifier in the EEPROM of the ESP32
-/// 
-/// *WARNING*: DO NOT USE 0 AS AN ADDRESS.
-#[no_mangle]
-pub extern "C" fn command_5_set_tile_identifier(this: &mut ContourWallCore,  identifier: u8) -> StatusCodeAlias {
-    if identifier == 0 {
-        eprintln!("[CW CORE ERROR] Cannot set a tile identifier to 0");
-        return StatusCode::Error.as_u8();
-    }
-
-    if write_to_serial_async(this.serial, &[5, identifier, identifier]).is_err() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    let read_buf = &mut[0; 1];
-    if serial_read(this.serial, read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
-        return StatusCode::ErrorInternal.as_u8()
-    }
-
-    read_buf[0]
-}
-
-#[no_mangle]
-pub extern "C" fn verify_if_tile(this: &mut ContourWallCore) -> bool {
-    let res = command_4_get_tile_identifier(this);
-    let res = StatusCode::new((res & 256) as u8).unwrap();
-    match res {
-        StatusCode::Error | StatusCode::TooSlow | StatusCode::NonMatchingCRC | StatusCode::ErrorInternal | StatusCode::NotACWPort => {
-            StatusCode::new((command_4_get_tile_identifier(this) & 256) as u8).unwrap() == StatusCode::Ok
-        },
-        StatusCode::UnknownCommand => unreachable!("[CW CORE ERROR] verify_if_tile executed a command which is unknown"),
-        StatusCode::Next | StatusCode::Reset => unreachable!("[CW CORE ERROR] verify_if_tile, should never receive a {}", res),
-        StatusCode::Ok => true,
-    }
-}
-
-/// Sets the frame_time field of the ContourWallCore struct in milliseconds. 
-/// 
-/// Default frame_time is 33ms and it is not recommended to go less than 33ms
-#[no_mangle]
-pub extern "C" fn set_frame_time(this: &mut ContourWallCore, frame_time: u64) {
-    this.frame_time = frame_time;
-}
-
-/// Returns current set frame_time of the ContourWallCore struct in milliseconds.
-#[no_mangle]
-pub extern "C" fn get_frame_time(this: &mut ContourWallCore) -> u64 {
-    this.frame_time
+    tiles.par_iter_mut().for_each(|tile| {
+        let _status_code = tile.command_1_solid_color(red, green, blue);
+    });
 }
 
 /// Transfers ownership of the ContourWallCore object back to Rust and frees the memory.
+/// Also closes the serial connections
 #[no_mangle]
 pub extern "C" fn drop(this: *mut ContourWallCore) {
     if !this.is_null() {
         unsafe {
             let cw = Box::from_raw(this);
             std::mem::drop(cw);
+
+            let tiles: Vec<Tile> =
+                Vec::from_raw_parts((*this).tiles_ptr, (*this).tiles_len, (*this).tiles_len);
+            std::mem::drop(tiles);
         }
     }
-}
-
-fn serial_read(serial: SerialPointerAlias, buffer: &mut[u8]) -> Result<(), ()> {
-    let serial = unsafe {  &mut *serial };
-    
-    let start = millis_since_epoch();
-    let time_to_receive_ms = 30;
-    while serial.bytes_to_read().expect("Cannot get bytes from serial read buffer") < buffer.len() as u32 {
-        if (millis_since_epoch() - start) > time_to_receive_ms {
-            eprintln!("[CW CORE ERROR] Only {}/{} bytes were received within the {}ms allocated time", serial.bytes_to_read().unwrap(), buffer.len(), time_to_receive_ms);
-            let _res = (*serial).clear(serialport::ClearBuffer::Input);
-            return Err(());
-        }
-    } 
-
-    if let Err(e) = serial.read_exact(buffer) {
-        eprintln!("[CW CORE ERROR] Error occured during reading of Serial buffer: {}", e);
-        Err(())
-    } else {
-        Ok(())
-    }
-}
-
-fn write_to_serial_async(serial: SerialPointerAlias, bytes: &[u8]) -> Result<usize, std::io::Error> {
-    unsafe { (*serial).write(bytes) }
-}
-
-fn write_to_serial(serial: SerialPointerAlias, bytes: &[u8]) -> Result<(), std::io::Error> {
-    unsafe { (*serial).write_all(bytes) }
-}
-
-fn millis_since_epoch() -> u64 {
-    let now = SystemTime::now();
-    let duration_since_epoch = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
-    duration_since_epoch.as_nanos() as u64 / 1_000_000
-}
-
-fn str_ptr_to_string(ptr: *const c_char) -> String {
-    let c_str = unsafe { CStr::from_ptr(ptr) };
-    c_str.to_string_lossy().into_owned()
 }
 
 #[cfg(test)]
@@ -489,58 +404,35 @@ mod tests {
     use super::*;
 
     #[test]
-    fn update_specific() {
-        let framebuffer = &mut[0, 4, 0, 255, 0, 0, 10, 0, 100, 100, 1, 100, 255, 0, 255];
-        let com_string: *const c_char = CString::new("COM16").expect("CString conversion failed").into_raw();
+    fn test_solid_color() {
+        let com_string: *const c_char = CString::new("COM5")
+            .expect("CString conversion failed")
+            .into_raw();
 
-        let mut cw = new(com_string, 921_600);
-        let code = command_3_update_specific_led(&mut cw, framebuffer.as_ptr(), (framebuffer.len()/5) as u8);
-        assert_eq!(code, 100, "testing if 'command_2_update_specific_led' works");
+        let mut cw = single_new_with_port(com_string, 2_000_000);
 
-        let code = command_0_show(&mut cw);
-        assert_eq!(code, 100, "testing if 'command_0_show' works");
+        solid_color(&mut cw, 255, 255, 255);
+        show(&mut cw);
+
+        assert!(false);
     }
 
     #[test]
-    fn update_all() {
-        let framebuffer = &mut[100; 1200];
+    fn test_update_all() {
+        let com_string: *const c_char = CString::new("COM5")
+            .expect("CString conversion failed")
+            .into_raw();
 
-        let com_string: *const c_char = CString::new("COM16").expect("CString conversion failed").into_raw();
+        let mut cw = single_new_with_port(com_string, 2_000_000);
 
-        let mut cw = new(com_string, 921_600);
+        let mut buffer = vec![0; 1200];
+        buffer[1150] = 255;
+        buffer[0] = 255;
+        buffer[59] = 255;
 
-        let code = command_2_update_all(&mut cw, framebuffer.as_ptr());
-        assert_eq!(code, 100, "testing if 'command_2_update_all' works");
+        update_all(&mut cw, buffer.as_ptr());
+        show(&mut cw);
 
-        let code = command_0_show(&mut cw);
-        assert_eq!(code, 100, "testing if 'command_0_show' works");
-    }
-
-    #[test]
-    fn solid_color() {
-        let com_string: *const c_char = CString::new("COM16").expect("CString conversion failed").into_raw();
-
-        let mut cw = new(com_string, 921_600);
-
-        let code = command_1_solid_color(&mut cw, 0, 0, 255);
-        assert_eq!(code, 100);
-        
-        let code = command_0_show(&mut cw);
-        assert_eq!(code, 100, "testing if 'command_0_show' works");
-    }
-
-    #[test]
-    fn tile_identifier_test() {
-        let com_string: *const c_char = CString::new("COM16").expect("CString conversion failed").into_raw();
-        let mut cw = new(com_string, 921_600);
-
-        let identifier: u8 = 4;
-
-        let res = command_5_set_tile_identifier(&mut cw, identifier);
-        assert_eq!(res, 100, "testing if 'command_4_get_tile_identifier' works");
-
-        let res = command_4_get_tile_identifier(&mut cw);
-        assert_eq!((res & 255) as u8, 100, "testing if 'command_4_get_tile_identifier' works");
-        assert_eq!((res >> 8) as u8, identifier);
+        assert!(false);
     }
 }
