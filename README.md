@@ -8,13 +8,27 @@ This repository contains: research, designs, source code and documention of the 
 
 ![ellie_tq_render](/img/ellie_tq_denoise.png)
 
+## Documentation readers guide
+
+- [(TODO) You want to use the Contour Wall for your project]()
+- [(TODO) You have bug, problem or suggestion]()
+- [You need to know something about the software architecture](/docs/software_architecture/ELLIE_software_achitecture.pdf)
+- [You need to know something about the hardware architecture documents (Excl. PCB's) ](/docs/hardware_architecture/README.md)
+- [You need to know something about the PCB's designs, information or files](/PCB/)
+- [(TODO) You want to write an additional wrapper](/lib/wrappers)
+- [(TODO) You want to contribute to the core libary]()
+- [(TODO) You want to contribute to the ESP32-S3 firmware]()
+
 ## Directory Structure
 
+- `docs/`: Additional documentation that does not belong to specific parts (E.G. architecture or how-to)
 - `firmware/`: The firmware for the tiles, running on ESP32's. Implements protocol and controls PCB's.
-- `lib/`: The library to control the Contour Wall
 - `font/`: A custom low-res font for the Contour Wall, including util functions
+- `img/`: images for E.G. README's 
+- `lib/`: The library to control the Contour Wall
 - `pcb/`: Information and design of the PCB's, such as: dimensions, electrical properties. All the design files of the PCB are also in there.
 - `research/`: All the research scripts, mostly regarding contour extraction from video feed.
+- `scripts/`: Additional scripts for E.G. a pipeline or development.
   
 ## Contributors
 
