@@ -12,7 +12,7 @@ class ContourWallCore(ctypes.Structure):
     ]
 
 class ContourWall:
-    def __init__(self):
+    def __init__(self) -> None:
         """Constructor for the ContourWall class."""
 
         # Load the Rust shared object
@@ -59,7 +59,7 @@ class ContourWall:
 
         self._cw_core = self._new(baudrate)
 
-    def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate: int =2_000_000):
+    def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate: int =2_000_000) -> None:
         """Create a new instance of ContourWallCore with 6 tiles"""
 
         if check_comport_existence([port1, port2, port3, port4, port5, port6]):
@@ -67,7 +67,7 @@ class ContourWall:
         else:
             raise Exception(f"one of the COM ports does not exist")
 
-    def single_new_with_port(self, port: str, baudrate: int =2_000_000):
+    def single_new_with_port(self, port: str, baudrate: int =2_000_000) -> None:
         """Create a new instance of ContourWallCore with 1 tile"""
 
         if check_comport_existence([port]):
@@ -75,24 +75,24 @@ class ContourWall:
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
-    def show(self, sleep_ms:int=0, optimize:bool=True):
+    def show(self, sleep_ms:int=0, optimize:bool=True) -> None:
         """
-        Update each single LED on the ContourWallCore with the pixel data in 'cw.pixels'.
-        
-        Example code: 
-        
-        cw.pixels[:] = [255, 0, 0]
+        Update each individual LED in the ContourWallCore object with the pixel data in 'cw.pixels'.
 
-        cw.show()
+        Example code::
+                ``` 
+                cw.pixels[:] = [255, 0, 0]
+                cw.show() 
+                ```
         """
         
-        ptr = (ctypes.c_uint8 * self.pixels.size).from_buffer(self.pixels)
+        ptr: ctypes._Pointer[c_uint8] = ctypes.cast(ctypes.c_char_p(self.pixels.tobytes()), ctypes.POINTER(ctypes.c_uint8))
         self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
         self.pushed_frames += 1
         time.sleep(sleep_ms/1000)
 
-    def fill_solid(self, r: int, g: int, b: int):
+    def fill_solid(self, r: int, g: int, b: int) -> None:
         """
         fill_solid is a function that fills the entire ContourWall with a single color. Each seperate LED will have the same color.
         
@@ -104,7 +104,7 @@ class ContourWall:
         self._solid_color(ctypes.byref(self._cw_core), r, g, b)
         self.pixels[:] = r, g, b
 
-    def drop(self):
+    def drop(self) -> None:
         """Drop the ContourWallCore instance"""
 
         self._drop(ctypes.byref(self._cw_core))
