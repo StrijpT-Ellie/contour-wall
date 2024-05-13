@@ -54,7 +54,7 @@ class ContourWall:
         self.pixels: np.ndarray = np.zeros((20, 20, 3), dtype=np.uint8)
         self.pushed_frames: int = 0
 
-    def new(self, baudrate=2_000_000):
+    def new(self, baudrate: int=2_000_000) -> None:
         """Create a new instance of ContourWallCore with 0 tiles"""
 
         self._cw_core = self._new(baudrate)
@@ -136,7 +136,7 @@ def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int
     else:
         return int(value * 255), int(p * 255), int(q * 255)
 
-def check_comport_existence(COMports) -> bool:
+def check_comport_existence(COMports: list[str]) -> bool:
     """Check for existing COM ports"""
     
     for COMport in COMports:
