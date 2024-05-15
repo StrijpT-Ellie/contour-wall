@@ -11,6 +11,7 @@ This repository contains: research, designs, source code and documention of the 
 ## Documentation readers guide
 
 - [(TODO) You want to use the Contour Wall for your project]()
+- [You need to know something about the construction](docs/construction/)
 - [(TODO) You have bug, problem or suggestion]()
 - [You need to know something about the software architecture](/docs/software_architecture/ELLIE_software_achitecture.pdf)
 - [You need to know something about the hardware architecture documents (Excl. PCB's) ](/docs/hardware_architecture/README.md)
