@@ -12,7 +12,7 @@ class ContourWallCore(ctypes.Structure):
     ]
 
 class ContourWall:
-    def __init__(self):
+    def __init__(self) -> None:
         """Constructor for the ContourWall class."""
 
         # Load the Rust shared object
@@ -50,16 +50,17 @@ class ContourWall:
 
         self._drop = self.__lib.drop
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
-            
-        self.pixels: np.array = np.zeros((20, 20, 3), dtype=np.uint8)
+
+        self.pixels: np.ndarray = np.zeros((20, 20, 3), dtype=np.uint8)
+
         self.pushed_frames: int = 0
 
-    def new(self, baudrate=2_000_000):
+    def new(self, baudrate: int=2_000_000) -> None:
         """Create a new instance of ContourWallCore with 0 tiles"""
 
         self._cw_core = self._new(baudrate)
 
-    def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate=2_000_000):
+    def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate: int =2_000_000) -> None:
         """Create a new instance of ContourWallCore with 6 tiles"""
 
         if check_comport_existence([port1, port2, port3, port4, port5, port6]):
@@ -67,7 +68,7 @@ class ContourWall:
         else:
             raise Exception(f"one of the COM ports does not exist")
 
-    def single_new_with_port(self, port: str, baudrate=2_000_000):
+    def single_new_with_port(self, port: str, baudrate: int =2_000_000) -> None:
         """Create a new instance of ContourWallCore with 1 tile"""
 
         if check_comport_existence([port]):
@@ -75,24 +76,24 @@ class ContourWall:
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
-    def show(self, sleep_ms:int=0, optimize:bool=True):
+    def show(self, sleep_ms:int=0, optimize:bool=True) -> None:
         """
-        Update each single LED on the ContourWallCore with the pixel data in 'cw.pixels'.
-        
-        Example code: 
-        
-        cw.pixels[:] = [255, 0, 0]
+        Update each individual LED in the ContourWallCore object with the pixel data in 'cw.pixels'.
 
-        cw.show()
+        Example code::
+                ``` 
+                cw.pixels[:] = [255, 0, 0]
+                cw.show() 
+                ```
         """
         
-        ptr = ctypes.cast(self.pixels.tobytes(), ctypes.POINTER(ctypes.c_uint8))
+        ptr: ctypes._Pointer[c_uint8] = ctypes.cast(ctypes.c_char_p(self.pixels.tobytes()), ctypes.POINTER(ctypes.c_uint8))
         self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
         self.pushed_frames += 1
         time.sleep(sleep_ms/1000)
 
-    def fill_solid(self, r: int, g: int, b: int):
+    def fill_solid(self, r: int, g: int, b: int) -> None:
         """
         fill_solid is a function that fills the entire ContourWall with a single color. Each seperate LED will have the same color.
         
@@ -104,39 +105,39 @@ class ContourWall:
         self._solid_color(ctypes.byref(self._cw_core), r, g, b)
         self.pixels[:] = r, g, b
 
-    def drop(self):
+    def drop(self) -> None:
         """Drop the ContourWallCore instance"""
 
         self._drop(ctypes.byref(self._cw_core))
 
-def hsv_to_rgb(h: int, s: int, v: int) -> tuple[int, int, int]:
-    h /= 255
-    s /= 255
-    v /= 255
+def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int]:
+    hue_float: float = hue/255
+    saturation /= 255
+    value /= 255
 
-    if s == 0.0:
-        return int(v * 255), int(v * 255), int(v * 255)
+    if saturation == 0.0:
+        return int(value * 255), int(value * 255), int(value * 255)
 
-    i = int(h * 6.)  # segment number (0 to 5)
-    f = (h * 6.) - i  # fractional part of h
-    p = v * (1. - s)
-    q = v * (1. - s * f)
-    t = v * (1. - s * (1. - f))
+    i = int(hue_float * 6.)  # saturationegment number (0 to 5)
+    f = (hue_float * 6.) - i  # fractional part of hue_float
+    p = value * (1. - saturation)
+    q = value * (1. - saturation * f)
+    t = value * (1. - saturation * (1. - f))
 
     if i == 0:
-        return int(v * 255), int(t * 255), int(p * 255)
+        return int(value * 255), int(t * 255), int(p * 255)
     elif i == 1:
-        return int(q * 255), int(v * 255), int(p * 255)
+        return int(q * 255), int(value * 255), int(p * 255)
     elif i == 2:
-        return int(p * 255), int(v * 255), int(t * 255)
+        return int(p * 255), int(value * 255), int(t * 255)
     elif i == 3:
-        return int(p * 255), int(q * 255), int(v * 255)
+        return int(p * 255), int(q * 255), int(value * 255)
     elif i == 4:
-        return int(t * 255), int(p * 255), int(v * 255)
+        return int(t * 255), int(p * 255), int(value * 255)
     else:
-        return int(v * 255), int(p * 255), int(q * 255)
+        return int(value * 255), int(p * 255), int(q * 255)
 
-def check_comport_existence(COMports) -> bool:
+def check_comport_existence(COMports: list[str]) -> bool:
     """Check for existing COM ports"""
     
     for COMport in COMports:
