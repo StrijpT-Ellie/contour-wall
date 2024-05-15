@@ -16,7 +16,7 @@ This repository contains: research, designs, source code and documention of the 
 - [You need to know something about the software architecture](/docs/software_architecture/ELLIE_software_achitecture.pdf)
 - [You need to know something about the hardware architecture documents (Excl. PCB's) ](/docs/hardware_architecture/README.md)
 - [You need to know something about the PCB's designs, information or files](/PCB/)
-- [(TODO) You want to write an additional wrapper](/lib/wrappers)
+- [(TODO) You want to write an additional wrapper](CONTRIBUTING.md#contributing-to-new-wrappers)
 - [(TODO) You want to contribute to the core libary]()
 - [(TODO) You want to contribute to the ESP32-S3 firmware]()
 
