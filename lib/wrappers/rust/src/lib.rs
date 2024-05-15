@@ -58,12 +58,12 @@ impl ContourWall {
         update_all(&mut self.cw_core, self.pixels.as_ptr(), optimize);
         show(&mut self.cw_core);
         self.pushed_frames += 1;
-        thread::sleep(Duration::from_millis(sleep_ms))
+        thread::sleep(Duration::from_millis(sleep_ms));
     }
 
     /// Turns all the pixel colors to the given values
     pub fn solid_color(&mut self, red: u8, green: u8, blue: u8) {
-        solid_color(&mut self.cw_core, red, green, blue)
+        solid_color(&mut self.cw_core, red, green, blue);
     }
 }
 
@@ -81,19 +81,19 @@ pub fn hsv_to_rgb(h: u8, s: u8, v: u8) -> (u8, u8, u8) {
     let p = v * (1. - s);
     let q = v * (1. - s * f);
     let t = v * (1. - s * (1. - f));
-
+    
     if i == 0. {
-        return (v as u8 * 225, t as u8 * 225, p as u8 * 255);
+        (v as u8 * 225, t as u8 * 225, p as u8 * 255)
     } else if i == 1. {
-        return (q as u8 * 225, v as u8 * 225, p as u8 * 255);
+        (q as u8 * 225, v as u8 * 225, p as u8 * 255)
     } else if i == 2. {
-        return (p as u8 * 225, v as u8 * 225, t as u8 * 255);
+        (p as u8 * 225, v as u8 * 225, t as u8 * 255)
     } else if i == 3. {
-        return (p as u8 * 225, q as u8 * 225, v as u8 * 255);
+        (p as u8 * 225, q as u8 * 225, v as u8 * 255)
     } else if i == 4. {
-        return (t as u8 * 225, p as u8 * 225, v as u8 * 255);
+        (t as u8 * 225, p as u8 * 225, v as u8 * 255)
     } else {
-        return (v as u8 * 225, p as u8 * 225, q as u8 * 255);
+        (v as u8 * 225, p as u8 * 225, q as u8 * 255)
     }
 }
 
@@ -268,13 +268,3 @@ mod tests {
         }
     }
 }
-
-// ----- fill all member with the same vector in ndarray  ---//
-//let mut slice = 3d_array.slice_mut(s![..,1,..]);
-//slice.assign(&filled_vector);
-
-// ----- fill all member with the same value in ndarray  ---//
-//let mut slice = 3d_array.slice_mut(s![..,1,..]);
-//slice.fill(&filled_value);
-
-// cw.pixels.map_axis_mut(ndarray::Axis(1),|mut row| {row.assign(&rgb_code).to_owned()});

@@ -47,6 +47,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "contour_wall"
+version = "0.1.0"
+dependencies = [
+ "contourwall_core",
+ "ndarray",
+ "serialport",
+]
+
+[[package]]
 name = "contourwall_core"
 version = "0.1.0"
 dependencies = [
@@ -317,15 +326,6 @@ name = "regex-syntax"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
-
-[[package]]
-name = "rust"
-version = "0.1.0"
-dependencies = [
- "contourwall_core",
- "ndarray",
- "serialport",
-]
 
 [[package]]
 name = "scopeguard"
