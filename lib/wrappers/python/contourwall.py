@@ -52,6 +52,7 @@ class ContourWall:
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
 
         self.pixels: np.ndarray = np.zeros((20, 20, 3), dtype=np.uint8)
+
         self.pushed_frames: int = 0
 
     def new(self, baudrate: int=2_000_000) -> None:
