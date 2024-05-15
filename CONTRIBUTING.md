@@ -3,7 +3,7 @@
 This page is for people who are interested in contributing to the Contour Wall project by work such as code or documentation. If you have anything outside that or you have a problem
 , read [Contributing in different ways](#Contributing-in-different-ways).
 
-## Contributing to the protocol
+## Contributing to CDI
 
 When you are missing a feature in CDI (**C**ontourwall **D**isplay **I**nterface) or can something be improved, it is best to create a Github issue first. This way is can be discussed first before time is invested.
 
