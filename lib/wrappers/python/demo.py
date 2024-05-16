@@ -2,6 +2,10 @@ from contourwall import ContourWall, hsv_to_rgb
 import time
 import sys
 
+def test_hsv_to_rgb():
+    # Convert HSV to RGB (the color RED)
+    print(hsv_to_rgb(0, 100, 100))
+
 def test_flash_all_colors():
     # Set all pixels to RED
     cw.fill_solid(0, 0, 255)
@@ -108,6 +112,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
 
     tests = {
+        "hsv_to_rgb": test_hsv_to_rgb,
         "flash_all_colors": test_flash_all_colors,
         "fade_to_white": test_fade_to_white,
         "fade_colors": test_fade_colors,
