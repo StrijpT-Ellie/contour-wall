@@ -1,6 +1,7 @@
 use contourwall_core::{
     new, new_with_ports, show, single_new_with_port, solid_color, update_all, ContourWallCore,
 };
+
 use serialport::{self, available_ports};
 use std::{ffi::c_char, thread, time::Duration};
 pub struct ContourWall {
