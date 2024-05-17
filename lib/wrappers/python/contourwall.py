@@ -145,8 +145,6 @@ class ContourWall:
 
     def fill_solid(self, r: int, g: int, b: int) -> None:
         """
-        fill_solid is a function that fills the entire ContourWall with one single color.
-
         This function is used to fill the entire ContourWall with one single color.
         
         Example code to make the entire ContourWall red: 
@@ -182,66 +180,33 @@ def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int
     This example code will convert the color with a hue of 380, a saturation of 100 and a value of 50 to RGB. The result will be a tuple with the RGB values, resulting in [255, 0, 0].
     """
 
-    # Convert hue to a range between 0 and 5
-    h_int = int(hue / 60) % 6
-
-    # Handle special case for h=0 and s=0 (pure white)
-    if h_int == 0 and saturation == 0:
-        return int(value * 255), int(value * 255), int(value * 255)
-
-    # Calculate fractional parts to be used later
-    f = hue / 60 - h_int
-    p = value * (1 - saturation)
-    q = value * (1 - saturation * f)
-    t = value * (1 - saturation * (1 - f))
-
-    # Define RGB components based on hue sector
-    if h_int == 0:
-        r, g, b = value, t, p
-    elif h_int == 1:
-        r, g, b = q, value, p
-    elif h_int == 2:
-        r, g, b = p, value, t
-    elif h_int == 3:
-        r, g, b = p, q, value
-    elif h_int == 4:
-        r, g, b = t, p, value
-    else:
-        r, g, b = value, p, q
-
-    # Clamp RGB values to 0-255 range
-    r = max(0, min(255, int(r * 255)))
-    g = max(0, min(255, int(g * 255)))
-    b = max(0, min(255, int(b * 255)))
-
-    return r, g, b
-
-    # # NON WORKING CODE @TODO: review the new code, test which code gives the expected and correct results.
-    # hue_float: float = hue/255
-    # saturation /= 255
-    # value /= 255
-
-    # if saturation == 0.0:
-    #     return int(value * 255), int(value * 255), int(value * 255)
-
-    # i = int(hue_float * 6.)  # saturationegment number (0 to 5)
-    # f = (hue_float * 6.) - i  # fractional part of hue_float
-    # p = value * (1. - saturation)
-    # q = value * (1. - saturation * f)
-    # t = value * (1. - saturation * (1. - f))
-
-    # if i == 0:
-    #     return int(value * 255), int(t * 255), int(p * 255)
-    # elif i == 1:
-    #     return int(q * 255), int(value * 255), int(p * 255)
-    # elif i == 2:
-    #     return int(p * 255), int(value * 255), int(t * 255)
-    # elif i == 3:
-    #     return int(p * 255), int(q * 255), int(value * 255)
-    # elif i == 4:
-    #     return int(t * 255), int(p * 255), int(value * 255)
-    # else:
-    #     return int(value * 255), int(p * 255), int(q * 255)
+    hue /= 360
+    saturation /= 100
+    value /= 100
+    
+    if saturation == 0.0: return value, value, value
+        
+    i = int(hue*6.0) # XXX assume int() truncates!
+    f = (hue*6.0) - i
+    i = i%6
+    
+    p = round((value*(1.0 - saturation)) * 255)
+    q = round((value*(1.0 - saturation*f)) * 255)
+    t = round((value*(1.0 - saturation*(1.0-f))) * 255)
+    value = round(value*255)
+    
+    if i == 0:
+        return value, t, p
+    if i == 1:
+        return q, value, p
+    if i == 2:
+        return p, value, t
+    if i == 3:
+        return p, q, value
+    if i == 4:
+        return t, p, value
+    if i == 5:
+        return value, p, q
 
 def check_comport_existence(COMports: list[str]) -> bool:
     """
