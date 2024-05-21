@@ -45,8 +45,8 @@ def test_fade_to_white():
 
 def test_fade_colors():
     # Slowly fade over all HSV colors
-    for i in range(0, 255):
-        cw.pixels[:] =  hsv_to_rgb(i, 255, 255)
+    for i in range(0, 360):
+        cw.pixels[:] =  hsv_to_rgb(i, 100, 100)
         cw.show()
     cw.fill_solid(0, 0, 0)
     cw.show(sleep_ms=10)
