@@ -4,6 +4,17 @@ use contourwall_core::{
 
 use serialport::{self, available_ports};
 use std::{ffi::c_char, thread, time::Duration};
+
+/// # Description
+/// The ContourWall takse responsible for managing on how frame is pushed to the title via its members.
+///
+/// # Struct members
+///  - cw_core: having the type of ContourWallCore. The cw_core play the role of title administration with 2 functionalities.
+//   setting up the ContourWall with configurations and managing the sending buffer tasks following different type of commands.
+///
+///  - pixels: having the type of ndarray::Array3<u8> with the shape of 20x20x3. This is a 3D arrays that representS the pixels frame.
+///  
+///  - pushed_frame: an unsigned 32bit integer. this integer counts the number of frames that is pushed to the titles.
 pub struct ContourWall {
     cw_core: ContourWallCore,
     pub pixels: ndarray::Array3<u8>,
@@ -11,6 +22,13 @@ pub struct ContourWall {
 }
 
 impl ContourWall {
+    ///Initialise the ContourWall, all the configuration and orchistration happens automatically.
+    ///
+    /// # Parameters
+    /// - Baudrate: an unsigned 32bit integer.
+    ///
+    /// # Returns
+    /// - The initialised ContourWall is return.
     pub fn new(baud_rate: u32) -> ContourWall {
         //new with zero title
         ContourWall {
@@ -20,7 +38,14 @@ impl ContourWall {
         }
     }
 
-    //TODO handle the error properly - check array type of &string is safe
+    ///Initialise the ContourWall, the fixed 6 ports are manually setup by the user.
+    ///
+    ///# Parameters
+    /// - ports: an fixed string arrays with the lengths of 6. this array stores the 6 configured ports.
+    /// - Baudrate: an unsigned 32bit integer.
+    ///
+    /// #Returns
+    /// - the intiialised Contourwall is return.
     pub fn new_with_ports(ports: [&String; 6], baud_rate: u32) -> Result<ContourWall, ()> {
         if check_comport_existence(ports.to_vec()) {
             Ok(ContourWall {
@@ -41,6 +66,14 @@ impl ContourWall {
         }
     }
 
+    ///Initialise the ContourWall with only one port.
+    ///
+    ///# Parameters
+    ///  - port: the string name of the port.
+    ///  - baudrate: an unsigned 32bit integer.
+    ///  
+    /// # Returns
+    ///  - the initialised ContourWall is return.
     pub fn single_new_from_port(port: String, baudrate: u32) -> Result<ContourWall, ()> {
         if check_comport_existence(vec![&port]) {
             Ok(ContourWall {
@@ -53,8 +86,20 @@ impl ContourWall {
         }
     }
 
-    //TODO - get the latest version of cw-core so update all has the optimize choce
-    /// update each single LED on the ContourWallCore with the pixel data in cw.pixels
+    /// Update each single LED on the ContourWallCore with the pixel data in cw.pixels. It has the choice of
+    /// using the optimisation algorithm, which allows the buffer is updated in more efficient way in term of speed.
+    /// In order to use the show function to update with the newly pixel frames, the pixels 3D arrays of
+    /// the CounterWall must be first update.
+    ///
+    /// #parameters
+    ///  - sleep_ms: an unsigned 64bit integer.time before pushing another frame
+    ///  - optimize: a boolean. Selection of turning on the optimisation.  
+    ///
+    /// #Examples
+    ///
+    ///  let cw = ContourWall::new(2_000_000);
+    /// cw.pixels = 
+    /// cw.show(10,true);
     pub fn show(&mut self, sleep_ms: u64, optimize: bool) {
         update_all(&mut self.cw_core, self.pixels.as_ptr(), optimize);
         show(&mut self.cw_core);
@@ -62,12 +107,32 @@ impl ContourWall {
         thread::sleep(Duration::from_millis(sleep_ms))
     }
 
-    /// Turns all the pixel colors to the given values
+    /// Sending the command of filling the titles with one solid color.
+    ///
+    /// #paramters
+    ///  - red: an unsigned 8bit integer.
+    ///  - green: an unsigned 8bit integer.
+    ///  - red: an unsigend 8bit integer.
+    /// 
+    /// #Examples
+    ///
+    ///  let cw = ContourWall::new(2_000_000);
+    ///  cw.pixels.slice_mut(s![.., .., ..]).assign(&Array::from(vec![i, i, i]));
+    ///  cw.show(10,true);
     pub fn solid_color(&mut self, red: u8, green: u8, blue: u8) {
         solid_color(&mut self.cw_core, red, green, blue)
     }
 }
 
+/// Converting color code from hsv to rgb.
+/// 
+/// #paramters
+///  - h: an unsigned 8bit integer.
+///  - s: an unsigned 8bit integer.
+///  - v: an unsigend 8bit integer.
+/// 
+/// #return
+///  a tuple of rgb code is return
 pub fn hsv_to_rgb(h: u8, s: u8, v: u8) -> (u8, u8, u8) {
     let h: f32 = h as f32 / 255.;
     let s: f32 = s as f32 / 255.;
@@ -122,8 +187,8 @@ fn string_to_str_ptr(s: &str) -> *mut c_char {
 
 #[cfg(test)]
 mod tests {
-    use std::vec;
     use ndarray::{s, Array};
+    use std::vec;
 
     use super::*;
 
@@ -249,17 +314,18 @@ mod tests {
             let mut left_to_right = true;
 
             for x in (0..=20).step_by(2) {
-
                 //get iter range from left to right or vice versa based on choice
-                let range_iter =  if left_to_right { 
-                         (0..=20).step_by(2).collect::<Vec<_>>().into_iter()
-                 } else { 
+                let range_iter = if left_to_right {
+                    (0..=20).step_by(2).collect::<Vec<_>>().into_iter()
+                } else {
                     (0..=20).rev().step_by(2).collect::<Vec<_>>().into_iter()
                 };
 
                 //update the pixels in size of 2x2 every times
                 for y in range_iter {
-                    cw.pixels.slice_mut(s![y..(y + 2), x..(x + 2), ..]).assign(&color);
+                    cw.pixels
+                        .slice_mut(s![y..(y + 2), x..(x + 2), ..])
+                        .assign(&color);
                     cw.show(10, false);
                 }
                 left_to_right = false;
