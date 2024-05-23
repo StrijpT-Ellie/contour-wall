@@ -1,5 +1,5 @@
 //! Tile struct and implementation. This struct implements the protocol to communicate with individual tiles.
-
+use more_asserts as ma;
 use std::time::Duration;
 
 use crate::{
@@ -7,6 +7,7 @@ use crate::{
     util::{generate_index_conversion_vector, extract_mutated_pixels, millis_since_epoch},
 };
 use log::error;
+use rayon::str::Bytes;
 use serialport::SerialPort;
 
 #[derive(Debug)]
@@ -207,12 +208,12 @@ impl Tile {
 
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
         let mut frame_buffer = [0; 1201];
-        let mut crc: u8 = 0;
+        let mut crc: usize = 0;
         for (i, byte) in frame_buffer_unordered.into_iter().enumerate() {
-            crc += *byte;
+            crc += *byte as usize;
             frame_buffer[self.index_converter_vector[i]] = *byte;
         }
-        frame_buffer[1200] = crc;
+        frame_buffer[1200] = (crc % 256 )as u8;
 
         // If the user opts in into protocol optimization, then a check will be done how different their current framebuffer is to the previous one.
         // If the framebuffer is similar enough (defined below) then a different command will be used to transfer the pixel values.
@@ -276,7 +277,7 @@ impl Tile {
             return StatusCode::ErrorInternal;
         }
 
-        assert_eq!(
+        ma::assert_le!(
             frame_buffer.len(),
             255 * 5,
             "When using command_3_update_specific_led you cannot transfer more then 255 LED"
@@ -292,20 +293,27 @@ impl Tile {
         if self.read_from_serial(read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
             return StatusCode::ErrorInternal;
         }
+ 
 
         let status_code = StatusCode::new(read_buf[0]).unwrap();
-        if status_code != StatusCode::Next {
-            return status_code;
-        }
+       
+        print!("status code: ");
+        print!("{:?}",status_code);
 
+        // if status_code != StatusCode::Next {
+        //     return status_code;
+        // }
+         
+    
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
-        let mut crc: u8 = 0;
+        let mut crc: usize = 0;
         for byte in frame_buffer {
-            crc += *byte;
+            crc += *byte as usize;
         }
-        let binding = [frame_buffer, &[crc]].concat();
+        let binding = [frame_buffer, &[(crc % 256) as u8]].concat();
         let frame_buffer = binding.as_slice();
-
+        
+        
         // Write framebuffer over serial to tile
         if self.write_over_serial(frame_buffer).is_err() {
             return StatusCode::ErrorInternal;

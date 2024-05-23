@@ -251,7 +251,7 @@ pub extern "C" fn new_with_ports(
 #[no_mangle]
 pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) -> ContourWallCore {
     let com_port = util::str_ptr_to_string(com_port);
-
+    
     let tile = Tile::init(com_port.clone(), baud_rate);
     let tile = match tile {
         Ok(tile) => tile,
@@ -329,8 +329,13 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
 /// ## Parameter
 /// - this: a mutable pointer to the ContourWallCore object
 /// - frame_buffer_ptr: pointer to framebuffer. If Contour Wall is in 6 tile mode the framebuffer is expected to be 7200 bytes big. In one tile mode, it is expected to be 1200 bytes big.
+
 #[no_mangle]
-pub extern "C" fn update_all(this: &mut ContourWallCore, frame_buffer_ptr: *const u8, optimize: bool) {
+pub extern "C" fn update_all(
+    this: &mut ContourWallCore,
+    frame_buffer_ptr: *const u8,
+    optimize: bool,
+) {
     let buffer_size = 1200 * this.tiles_len;
 
     let frame_buffer: &[u8] = unsafe { std::slice::from_raw_parts(frame_buffer_ptr, buffer_size) };
@@ -405,7 +410,7 @@ mod tests {
 
     #[test]
     fn test_solid_color() {
-        let com_string: *const c_char = CString::new("COM5")
+        let com_string: *const c_char = CString::new("COM3")
             .expect("CString conversion failed")
             .into_raw();
 
@@ -414,12 +419,13 @@ mod tests {
         solid_color(&mut cw, 255, 255, 255);
         show(&mut cw);
 
+        
         assert!(false);
     }
 
     #[test]
     fn test_update_all() {
-        let com_string: *const c_char = CString::new("COM5")
+        let com_string: *const c_char = CString::new("COM3")
             .expect("CString conversion failed")
             .into_raw();
 
@@ -430,7 +436,7 @@ mod tests {
         buffer[0] = 255;
         buffer[59] = 255;
 
-        update_all(&mut cw, buffer.as_ptr());
+        update_all(&mut cw, buffer.as_ptr(), false);
         show(&mut cw);
 
         assert!(false);

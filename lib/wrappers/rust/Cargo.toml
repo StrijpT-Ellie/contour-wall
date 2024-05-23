@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 contourwall_core = {path = "../../cw-core" , version = "0.1.0" }
+more-asserts = "0.3.1"
 ndarray = "0.15.6"
 serialport = "4.3.0"
