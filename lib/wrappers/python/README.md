@@ -2,7 +2,7 @@
 
 ## How to run
 
-1. Install Python, version 3.9 to 3.11
+1. Install Python, version >3.9
 2. Install Cargo
 3. Install modules: `python3 -m pip install -r requirements.txt`
 4. Compile core library located at `contourwall/lib/cw_core`: `cargo build --release`
