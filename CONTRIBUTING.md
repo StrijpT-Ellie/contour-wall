@@ -13,9 +13,9 @@ However, if you are ready to implement your change, make sure you have a good un
 
 ## Contributing to the core libary
 
-Have you found a bug, optimization or do you want to implement a feature for the core libary.
+Have you found a bug, optimization or do you want to implement a feature for the core libary. Make sure that you understand the whole architecture of the system, refer to the [architecture document](docs/software_architecture/ELLIE_software_achitecture.pdf) for better understanding of the whole system. Also, if you are planning on the part of the library which implements CDI, it is also recommended to have a basic understanding of [UART](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver-transmitter).  
 
-TODO
+
 
 ## Contributing to (new) wrappers
 
