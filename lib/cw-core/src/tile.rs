@@ -272,6 +272,11 @@ impl Tile {
     /// let status_code = tile.command_3_update_specific_led(framebuffer);
     /// ```
     pub fn command_3_update_specific_led(&mut self, frame_buffer: &[u8]) -> StatusCode {
+        let timespan = millis_since_epoch() - self.last_serial_write_time;
+        if timespan < self.frame_time.into() {
+            std::thread::sleep(Duration::from_millis((self.frame_time as u64) - timespan));
+        }
+
         // Indicate to tile that command 3 is about to be executed
         if self.write_over_serial(&[3]).is_err() {
             return StatusCode::ErrorInternal;
