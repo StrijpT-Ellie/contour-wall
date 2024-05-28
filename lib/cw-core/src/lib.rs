@@ -355,7 +355,7 @@ pub extern "C" fn update_all(
         });
     } else {
         error!(
-            "--> UNREACHABLE <-- Amount of tiles HAS to be either 1 or 6, not '{}'\n EXITING",
+            "--> UNREACHABLE <-- Amount of tilesxis i  HAS to be either 1 or 6, not '{}'\n EXITING",
             this.tiles_len
         );
         unreachable!();

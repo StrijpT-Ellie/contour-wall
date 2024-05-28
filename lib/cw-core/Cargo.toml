@@ -1,6 +1,6 @@
 [package]
 name = "contourwall_core"
-version = "0.1.0"
+rust-version = "1.75"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,4 +16,3 @@ serialport = "4.3.0"
 rayon = "1.10.0"
 log = "0.4"
 env_logger = "0.9"
-more-asserts = "0.3.1"

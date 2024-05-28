@@ -1,6 +1,7 @@
 use contourwall_core::{
-    new, new_with_ports, show, single_new_with_port, solid_color, update_all, ContourWallCore,
+    new, new_with_ports, show, single_new_with_port, update_all, ContourWallCore,
 };
+
 
 use serialport::{self, available_ports};
 use std::{ffi::c_char, thread, time::Duration};
@@ -22,7 +23,7 @@ pub struct ContourWall {
 }
 
 impl ContourWall {
-    ///Initialise the ContourWall, all the configuration and orchistration happens automatically.
+    ///Initialise the ContourWall, all the configuration and orchistration of the ContourWallCore happens automatically.
     ///
     /// # Parameters
     /// - Baudrate: an unsigned 32bit integer.
@@ -38,7 +39,7 @@ impl ContourWall {
         }
     }
 
-    ///Initialise the ContourWall, the fixed 6 ports are manually setup by the user.
+    ///Initialise the ContourWall, the fixed 6 ports are manually setup by the user to the ContourWallCore.
     ///
     ///# Parameters
     /// - ports: an fixed string arrays with the lengths of 6. this array stores the 6 configured ports.
@@ -96,10 +97,11 @@ impl ContourWall {
     ///  - optimize: a boolean. Selection of turning on the optimisation.  
     ///
     /// #Examples
-    ///
+    ///   
+    ///```
     ///  let cw = ContourWall::new(2_000_000);
-    /// cw.pixels =
-    /// cw.show_w(10,true);
+    ///  cw.pixels.slice_mut(s![.., .., ..]).assign(&Array::from(vec![255, 255, 255]));
+    ///  cw.show_w(10,true);
     pub fn show_w(&mut self, sleep_ms: u64, optimize: bool) {
         self.pushed_frames += 1;
         update_all(
@@ -108,7 +110,7 @@ impl ContourWall {
                 .as_slice()
                 .expect("could not get pixel slice")
                 .as_ptr(),
-            optimize
+            optimize,
         );
         show(&mut self.cw_core);
 
@@ -123,18 +125,15 @@ impl ContourWall {
     ///  - red: an unsigend 8bit integer.
     ///
     /// #Examples
-    ///
+    ///```
     ///  let cw = ContourWall::new(2_000_000);
     ///  cw.pixels.slice_mut(s![.., .., ..]).assign(&Array::from(vec![i, i, i]));
     ///  cw.show_w(10,true);
+    /// ```
     pub fn solid_color_w(&mut self, red: u8, green: u8, blue: u8) {
-        let filled_vector = ndarray::Array::from(vec![red, green, blue]);
-
         let mut slice = self.pixels.slice_mut(ndarray::s![.., .., ..]);
+        let filled_vector = ndarray::Array::from(vec![red, green, blue]);
         slice.assign(&filled_vector);
-
-        print!("{:?}", self.pixels);
-        // solid_color_w(&mut self.cw_core, red, green, blue)
     }
 }
 
@@ -263,7 +262,8 @@ mod tests {
 
     #[test]
     fn test_fade_colors() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000) else {
+        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        else {
             panic!("Port does not exist");
         };
 
@@ -273,7 +273,6 @@ mod tests {
                 .slice_mut(s![.., .., ..])
                 .assign(&Array::from(vec![i, 255, 255]));
             cw.show_w(10, true);
-
         }
 
         cw.solid_color_w(0, 0, 0);
@@ -282,7 +281,8 @@ mod tests {
 
     #[test]
     fn test_moving_lines() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000) else {
+        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        else {
             panic!("Port does not exist");
         };
 
@@ -323,7 +323,8 @@ mod tests {
 
     #[test]
     fn test_turning_pixels_on_zigzag() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000) else {
+        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        else {
             panic!("Port does not exist");
         };
 
@@ -354,13 +355,3 @@ mod tests {
         }
     }
 }
-
-// ----- fill all member with the same vector in ndarray  ---//
-//let mut slice = 3d_array.slice_mut(s![..,..,..]);
-//slice.assign(&filled_vector);
-
-// ----- fill all member with the same value in ndarray  ---//
-//let mut slice = 3d_array.slice_mut(s![..,..,..]);
-//slice.fill(&filled_value);
-
-// cw.pixels.map_axis_mut(ndarray::Axis(1),|mut row| {row.assign(&rgb_code).to_owned()});
