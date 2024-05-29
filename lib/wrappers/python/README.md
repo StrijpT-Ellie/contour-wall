@@ -16,19 +16,20 @@ To utilize this library, ensure you have the necessary serial port permissions a
 
 ``` Python
 from contourwall import ContourWall, hsv_to_rgb
-def fade_colors():
-    # Slowly fade over all HSV colors
-    for i in range(0, 360):
-        cw.pixels[:] =  hsv_to_rgb(i, 100, 100)
-        cw.show()
-    cw.fill_solid(0, 0, 0)
-    cw.show(sleep_ms=10)
+
+cw = ContourWall()
+cw.single_new_with_port("COM3")
+
+for i in range(0, 360):
+    cw.pixels[:] =  hsv_to_rgb(i, 100, 100)
+    cw.show()
+cw.fill_solid(0, 0, 0)
+cw.show()
 ```
 
 ## Functions in the python wrapper
-|Type|Function|Description|
+|Type|Classes & Functions|Description|
 |---|---|---|
-|class 'struct'|`ContourWallCore`|`ContourWallCore` is a ctypes structure that is used to communicate with the Rust shared object.|
 |class|`ContourWall`|When this class is called it will be initiated by the `__init__` function.|
 |def|`__init__`|This function is used to create an instance of the `ContourWall` class.|
 |def|`new`|This function is used to create the `ContourWallCore` object when the COM ports are unknown.|
@@ -36,9 +37,7 @@ def fade_colors():
 |def|`single_new_with_ports`|This function is used to create a new instance of ContourWallCore when a single COM port is known.|
 |def|`show`|This function is used to show the current state of the pixel array on the ContourWall.|
 |def|`fill_solid`|This function is used to fill the entire ContourWall with one single color.|
-|def|`drop`|Drop the ContourWallCore instance.|
 |def|`hsv_to_rgb`|This function is used to convert HSV color code to RGB color code.|
-|def|`check_comport_existence`|This function is used to check if the COM ports exist.|
 
 ## Running MyPy typechecker
 
