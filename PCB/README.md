@@ -1,34 +1,17 @@
-# ELLIE Panel PCB
+# PCB's readers guide
 
 > **DO NOT RELOCATED THIS PAGE TO A DIFFERENT URL, A QR CODE ON THE PCB POINTS TO THIS**
 
-All files to order more PCB's can be found in this directory. Ordered and assembled from JLCPCB with LCSC as part supplier.
+All files to order more PCB's can be found in this directory. Ordered and assembled from [JLCPCB](https://jlcpcb.com/) with [LCSC](https://www.lcsc.com/) as part supplier. The CAD software used to design the PCB's is [EasyEDA](https://easyeda.com/). These three companies and tools are well integrated and therefore the design process is easier.
 
-# Tech spec & info
+## Display panel
 
-- **LED type:** WS2812B ([datasheet](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf))
-  - **Total current:** 60mA * 25 = 1500mA. However, in reality, one full-white WS2812B LED only uses 36mA. Therefore one board uses about 900mA.
-- **Dimensions (WxH):** 220mm x 220mm (30mm space between the PCB's)
-- **Mounting hole grid size:** 125mm
-- **Mounting hole size:** 3mm
-- **Decoupling capacitor**: 100nF
-- **Big Capacitor:** 1000uF capacitor pin holes (Not placed be default, solder by hand if needed.)
-- **Coppper Thickness:** 1oz Copper layer
-- **Trace Width:** 5v trace has 7.5mm width. Can handle max of 10A
-- **Assembled PCB Weigth:** ~180 grams (Including all SMD components)
+For information about the Display Panels go to [display_panel/](/display_panel/). Here you can find schematics, dimensions and general information about the PCB. Here you will also find information about ordering the PCB van JLCPCB.
 
-# Dimensions
+## ESP32S3 Breakoutboard
 
-> NOTE: Dimensions image is not to scale
+For information about the Display Panels go to [esp32s3_breakoutboard/](/esp32s3_breakoutboard/). Here you can find schematics, dimensions and general information about the PCB. Here you will also find information about ordering the PCB van JLCPCB.
 
-![dimensions](img/pcb_dimensions.png)
+## Usefull links
 
-# Electrical Schematic
-
-![schematic](img/Schematic_ELLIE_DISPLAY_PANEL.png)
-
-# PCB
-
-Front of PCB                | Back of PCB
---------------------------- | -------------------------
-![pcb_front](img/front.png) | ![pcb_back](img/back.png)
+- **How do I order from JLCPCB:** [https://jlcpcb.com/help/article/54-how-do-i-place-an-order](https://jlcpcb.com/help/article/54-how-do-i-place-an-order)
