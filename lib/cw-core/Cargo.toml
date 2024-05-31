@@ -1,5 +1,6 @@
 [package]
 name = "contourwall_core"
+version= "0.1.0"
 rust-version = "1.75"
 edition = "2021"
 
