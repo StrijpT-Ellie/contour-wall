@@ -126,7 +126,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_extract_mutated_framebuffer_empty_case() {
+    fn test_extract_mutated_framebuffer_no_led_is_updated_case() {
         //arrange
         let previous_framebuffer = &mut [0u8; 1200];
         let current_framebuffer = &mut [0u8; 1200];

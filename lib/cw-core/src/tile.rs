@@ -1,10 +1,9 @@
 //! Tile struct and implementation. This struct implements the protocol to communicate with individual tiles.
-
 use std::time::Duration;
 
 use crate::{
     status_code::StatusCode,
-    util::{generate_index_conversion_vector, extract_mutated_pixels, millis_since_epoch},
+    util::{extract_mutated_pixels, generate_index_conversion_vector, millis_since_epoch},
 };
 use log::error;
 use serialport::SerialPort;
@@ -20,6 +19,7 @@ pub struct Tile {
     pub frame_time: u64,
     last_serial_write_time: u64,
     port: Box<dyn SerialPort>,
+
     index_converter_vector: [usize; 1200],
     previous_framebuffer: [u8; 1200],
 }
@@ -155,8 +155,8 @@ impl Tile {
 
         for i in (0..self.previous_framebuffer.len()).step_by(3) {
             self.previous_framebuffer[i] = red;
-            self.previous_framebuffer[i+1] = green;
-            self.previous_framebuffer[i+2] = blue;
+            self.previous_framebuffer[i + 1] = green;
+            self.previous_framebuffer[i + 2] = blue;
         }
 
         // Read response of tile
@@ -194,7 +194,11 @@ impl Tile {
     ///
     /// let status_code = tile.command_2_update_all(framebuffer);
     /// ```
-    pub fn command_2_update_all(&mut self, frame_buffer_unordered: &[u8], optimize: bool) -> StatusCode {
+    pub fn command_2_update_all(
+        &mut self,
+        frame_buffer_unordered: &[u8],
+        optimize: bool,
+    ) -> StatusCode {
         let timespan = millis_since_epoch() - self.last_serial_write_time;
         if timespan < self.frame_time.into() {
             std::thread::sleep(Duration::from_millis((self.frame_time as u64) - timespan));
@@ -206,20 +210,26 @@ impl Tile {
         }
 
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
+
+        // CRC overflowsum mechanism is replicated by using modular, the CRC sum is now type usize allows is being sum to the max of usize.
+        // Note: CRC is not able to implemented as normal in c/c++ or other language, since Rust has memory safety feature,
+        // which does not allow overflow to happend. Hence, modular is implemented to get the same result.
         let mut frame_buffer = [0; 1201];
-        let mut crc: u8 = 0;
+        let mut crc: usize = 0;
         for (i, byte) in frame_buffer_unordered.into_iter().enumerate() {
-            crc += *byte;
+            crc += *byte as usize;
             frame_buffer[self.index_converter_vector[i]] = *byte;
         }
-        frame_buffer[1200] = crc;
+
+        frame_buffer[1200] = (crc % 256) as u8;
 
         // If the user opts in into protocol optimization, then a check will be done how different their current framebuffer is to the previous one.
         // If the framebuffer is similar enough (defined below) then a different command will be used to transfer the pixel values.
         // This optimization could allow for a bit faster frametimes.
         if optimize {
             let comparison_framebuffer = frame_buffer[0..1200].try_into().unwrap();
-            let mutated_frame_buffer = extract_mutated_pixels(&mut self.previous_framebuffer, &comparison_framebuffer);
+            let mutated_frame_buffer =
+                extract_mutated_pixels(&mut self.previous_framebuffer, &comparison_framebuffer);
             self.previous_framebuffer = comparison_framebuffer;
             // If there are less then 100 changed pixels then command_3_update_specific_led will be used.
             // The 100 is an arbitrary limit. This could very well be changed in the future to decide what the optimal limit is.
@@ -227,7 +237,6 @@ impl Tile {
                 let sent_mutated_frame_buffer: &[u8] = &mutated_frame_buffer;
                 return self.command_3_update_specific_led(sent_mutated_frame_buffer);
             }
-    
         }
 
         // Write framebuffer over serial to tile
@@ -244,7 +253,7 @@ impl Tile {
         }
     }
 
-    /// Executes `command_3_update_all` of the protocol, sets some LED's to individually assigned colors based given index with RGB code.
+    /// Executes `command_3_update_specific_led` of the protocol, sets some LED's to individually assigned colors based given index with RGB code.
     ///
     /// For every specific LED being updated, five bytes are needed. Two bytes for the LED index, one byte for red, blue and green.
     /// The index for the LED is stored in [big-endian](https://en.wikipedia.org/wiki/Endianness) format, most significant byte on the smaller address.
@@ -270,40 +279,47 @@ impl Tile {
     ///
     /// let status_code = tile.command_3_update_specific_led(framebuffer);
     /// ```
+
     pub fn command_3_update_specific_led(&mut self, frame_buffer: &[u8]) -> StatusCode {
+        let timespan = millis_since_epoch() - self.last_serial_write_time;
+        if timespan < self.frame_time.into() {
+            std::thread::sleep(Duration::from_millis((self.frame_time as u64) - timespan));
+        }
+
         // Indicate to tile that command 3 is about to be executed
         if self.write_over_serial(&[3]).is_err() {
             return StatusCode::ErrorInternal;
         }
 
-        assert_eq!(
-            frame_buffer.len(),
-            255 * 5,
+        assert!(
+            frame_buffer.len() <= (255 * 5),
             "When using command_3_update_specific_led you cannot transfer more then 255 LED"
         );
 
+        //send the number of leds
         let led_count = (frame_buffer.len() / 5) as u8;
         if self.write_over_serial(&[led_count, led_count]).is_err() {
             return StatusCode::ErrorInternal;
         }
 
-        // Reading the next
+        //Reading the next response from eps32
         let read_buf = &mut [0; 1];
         if self.read_from_serial(read_buf).is_err() || StatusCode::new(read_buf[0]).is_none() {
             return StatusCode::ErrorInternal;
         }
 
         let status_code = StatusCode::new(read_buf[0]).unwrap();
+
         if status_code != StatusCode::Next {
             return status_code;
         }
 
         // Generate framebuffer from pointer and generating the CRC by taking the sum of all the RGB values of the framebuffer
-        let mut crc: u8 = 0;
+        let mut crc: usize = 0;
         for byte in frame_buffer {
-            crc += *byte;
+            crc += *byte as usize;
         }
-        let binding = [frame_buffer, &[crc]].concat();
+        let binding = [frame_buffer, &[(crc % 256) as u8]].concat();
         let frame_buffer = binding.as_slice();
 
         // Write framebuffer over serial to tile

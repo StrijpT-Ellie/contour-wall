@@ -6,6 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-contourwall_core = {path = "../../cw-core" , version = "0.1.0" }
+contourwall_core = "0.2.1"
+#Uncomment the following line if you are developing the wrapper and want the newest version of the core libary
+#contourwall_core = {path = "../../cw-core" }
+
 ndarray = "0.15.6"
 serialport = "4.3.0"
