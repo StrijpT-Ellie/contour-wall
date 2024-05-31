@@ -30,7 +30,7 @@ impl ContourWall {
     ///
     /// # Returns
     /// - The initialised ContourWall is return.
-    pub fn new_w(baud_rate: u32) -> ContourWall {
+    pub fn new(baud_rate: u32) -> ContourWall {
         //new with zero title
         ContourWall {
             cw_core: new(baud_rate),
@@ -47,7 +47,7 @@ impl ContourWall {
     ///
     /// #Returns
     /// - the intiialised Contourwall is return.
-    pub fn new_with_ports_w(ports: [&String; 6], baud_rate: u32) -> Result<ContourWall, ()> {
+    pub fn new_with_ports(ports: [&String; 6], baud_rate: u32) -> Result<ContourWall, ()> {
         if check_comport_existence(ports.to_vec()) {
             Ok(ContourWall {
                 cw_core: new_with_ports(
@@ -75,7 +75,7 @@ impl ContourWall {
     ///  
     /// # Returns
     ///  - the initialised ContourWall is return.
-    pub fn single_new_from_port_w(port: String, baudrate: u32) -> Result<ContourWall, ()> {
+    pub fn single_new_from_port(port: String, baudrate: u32) -> Result<ContourWall, ()> {
         if check_comport_existence(vec![&port]) {
             Ok(ContourWall {
                 cw_core: single_new_with_port(string_to_str_ptr(&port), baudrate),
@@ -102,7 +102,7 @@ impl ContourWall {
     ///  let cw = ContourWall::new(2_000_000);
     ///  cw.pixels.slice_mut(s![.., .., ..]).assign(&Array::from(vec![255, 255, 255]));
     ///  cw.show_w(10,true);
-    pub fn show_w(&mut self, sleep_ms: u64, optimize: bool) {
+    pub fn show(&mut self, sleep_ms: u64, optimize: bool) {
         self.pushed_frames += 1;
         update_all(
             &mut self.cw_core,
@@ -130,7 +130,7 @@ impl ContourWall {
     ///  cw.pixels.slice_mut(s![.., .., ..]).assign(&Array::from(vec![i, i, i]));
     ///  cw.show_w(10,true);
     /// ```
-    pub fn solid_color_w(&mut self, red: u8, green: u8, blue: u8) {
+    pub fn solid_color(&mut self, red: u8, green: u8, blue: u8) {
         let mut slice = self.pixels.slice_mut(ndarray::s![.., .., ..]);
         let filled_vector = ndarray::Array::from(vec![red, green, blue]);
         slice.assign(&filled_vector);
