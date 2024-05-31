@@ -329,7 +329,6 @@ pub extern "C" fn show(this: &mut ContourWallCore) {
 /// ## Parameter
 /// - this: a mutable pointer to the ContourWallCore object
 /// - frame_buffer_ptr: pointer to framebuffer. If Contour Wall is in 6 tile mode the framebuffer is expected to be 7200 bytes big. In one tile mode, it is expected to be 1200 bytes big.
-
 #[no_mangle]
 pub extern "C" fn update_all(
     this: &mut ContourWallCore,
