@@ -3,8 +3,7 @@ name: Rust Unit Tests
 on:
   push:
     branches:
-      - '*'
-      - '*/*'
+      - '*'  # Run on all branches
 
 jobs:
   build:
@@ -18,13 +17,6 @@ jobs:
     - uses: actions-rs/toolchain@v1  # Install Rust
       with:
           toolchain: stable
-
-    - name: Fetch action
-      id: pl
-      uses: Rishabh510/Path-lister-action@master
-      with:
-        path: "./lib/"
-        type: ".toml"
 
     - name: Install libudev-dev dependency
       run: sudo apt-get install libudev-dev
