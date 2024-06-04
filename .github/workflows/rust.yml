@@ -3,8 +3,7 @@ name: Rust Unit Tests
 on:
   push:
     branches:
-      - '*'  # Run on all branches
-      - '*/*'
+      - '**'  # Run on all branches
 
 jobs:
   build:
