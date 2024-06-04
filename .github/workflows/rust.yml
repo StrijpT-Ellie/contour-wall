@@ -26,6 +26,9 @@ jobs:
         path: "./lib/"
         type: ".toml"
 
+    - name: Install libudev-dev dependency
+      run: sudo apt-get install libudev-dev
+
     - name: Cargo Check
       working-directory: ./lib/cw-core/
       run: cargo check --release
