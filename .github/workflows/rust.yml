@@ -26,16 +26,16 @@ jobs:
       with:
         path: "./lib/"
         type: ".toml"
-        
+
     - name: Cargo Check
-      working-directory: ./lib/cw-core
+      working-directory: ./lib/cw-core/
       run: cargo check --release
 
     - name: Cargo Build
-      working-directory: ./lib/cw-core
+      working-directory: ./lib/cw-core/
       run: cargo build --release
 
     - name: Cargo Test
-      working-directory: ./lib/cw-core
+      working-directory: ./lib/cw-core/
       run: cargo test --release util
 
