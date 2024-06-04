@@ -180,20 +180,20 @@ def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int
     This example code will convert the color with a hue of 380, a saturation of 100 and a value of 50 to RGB. The result will be a tuple with the RGB values, resulting in [255, 0, 0].
     """
 
-    hue /= 360
+    hue: float = float(hue) / 100.0
     saturation /= 100
     value /= 100
     
-    if saturation == 0.0: return value, value, value
+    if saturation == 0.0: return int(value), int(value), int(value)
         
     i = int(hue*6.0) # XXX assume int() truncates!
     f = (hue*6.0) - i
     i = i%6
     
-    p = round((value*(1.0 - saturation)) * 255)
-    q = round((value*(1.0 - saturation*f)) * 255)
-    t = round((value*(1.0 - saturation*(1.0-f))) * 255)
-    value = round(value*255)
+    p = int(round((value*(1.0 - saturation)) * 255))
+    q = int(round((value*(1.0 - saturation*f)) * 255))
+    t = int(round((value*(1.0 - saturation*(1.0-f))) * 255))
+    value = int(round(value*255))
     
     if i == 0:
         return value, t, p
@@ -207,6 +207,8 @@ def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int
         return t, p, value
     if i == 5:
         return value, p, q
+        
+    return 0, 0, 0
 
 def check_comport_existence(COMports: list[str]) -> bool:
     """

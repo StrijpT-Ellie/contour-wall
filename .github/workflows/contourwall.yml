@@ -1,0 +1,49 @@
+name: ContourWall Pipeline
+
+on:
+  push:
+    branches:
+      - '**'  # Run on all branches
+
+jobs:
+  cargo_check_build_test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2  # Checkout code
+      with:
+          working-directory: ./lib/cw-core # Set working directory to ./lib/cw-core
+
+    - uses: actions-rs/toolchain@v1  # Install Rust
+      with:
+          toolchain: stable
+
+    - name: Install libudev-dev dependency
+      run: sudo apt-get install libudev-dev
+
+    - name: Cargo Check
+      working-directory: ./lib/cw-core/
+      run: cargo check --release
+
+    - name: Cargo Build
+      working-directory: ./lib/cw-core/
+      run: cargo build --release
+
+    - name: Cargo Test
+      working-directory: ./lib/cw-core/
+      run: cargo test --release util
+
+  python_type_checking:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2  # Checkout code
+      with:
+          working-directory: ./lib/cw-core # Set working directory to ./lib/cw-core
+
+    - name: Install python wrapper requirements
+      run: python3 -m pip install -r ./lib/wrappers/python/requirements.txt
+
+    - name: Type Safety Check (Python Wrapper)
+      working-directory: ./lib/wrappers/python/
+      run: python3 -m mypy contourwall.py --disallow-untyped-defs --allow-redefinition
