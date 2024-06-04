@@ -6,7 +6,7 @@ on:
       - '**'  # Run on all branches
 
 jobs:
-  build:
+  code_check:
     runs-on: ubuntu-latest
 
     steps:
@@ -14,6 +14,10 @@ jobs:
       with:
           working-directory: ./lib/cw-core # Set working directory to ./lib/cw-core
 
+  cargo_cbt:
+    runs-on: ubuntu-latest
+
+    steps:
     - uses: actions-rs/toolchain@v1  # Install Rust
       with:
           toolchain: stable
@@ -33,6 +37,10 @@ jobs:
       working-directory: ./lib/cw-core/
       run: cargo test --release util
 
+  python_type_checking:
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Install python wrapper requirements
       working-directory: ./lib/wrappers/python/
       run: python3 -m pip install -r requirements.txt
