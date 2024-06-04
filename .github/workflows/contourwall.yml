@@ -1,4 +1,4 @@
-name: Rust Unit Tests
+name: ContourWall Pipeline
 
 on:
   push:
