@@ -33,8 +33,9 @@ jobs:
       working-directory: ./lib/cw-core/
       run: cargo test --release util
 
-    - name: Install MyPy type checker
-      run: python3 -m pip install -U mypy
+    - name: Install python wrapper requirements
+      working-directory: ./lib/wrappers/python/
+      run: python3 -m pip install -r requirements.txt
 
     - name: Type Safety Check (Python Wrapper)
       working-directory: ./lib/wrappers/python/
