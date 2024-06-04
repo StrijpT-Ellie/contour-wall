@@ -41,4 +41,4 @@ cw.show()
 
 ## Running MyPy typechecker
 
-- `python3 -m mypy contourwall.py --disallow-untyped-defs`
+- `python3 -m mypy contourwall.py --disallow-untyped-defs --allow-redefinition`

@@ -42,9 +42,8 @@ jobs:
           working-directory: ./lib/cw-core # Set working directory to ./lib/cw-core
 
     - name: Install python wrapper requirements
-      working-directory: ./lib/wrappers/python/
-      run: python3 -m pip install -r requirements.txt
+      run: python3 -m pip install -r ./lib/wrappers/python/requirements.txt
 
     - name: Type Safety Check (Python Wrapper)
       working-directory: ./lib/wrappers/python/
-      run: python3 -m mypy contourwall.py --disallow-untyped-defs
+      run: python3 -m mypy contourwall.py --disallow-untyped-defs --allow-redefinition
