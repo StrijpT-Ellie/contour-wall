@@ -8,4 +8,4 @@ To see where this library sits in the Contour Wall system, refer to the [softwar
 
 If you are planning on using this library in another Rust project, run this command in your project: `cargo add contourwall_core`.
 
-If you are planning on using it in another language you need to compile it to a `*.so` (for Unix) or `*.dll` (for Windows). Execute: `cargo build --release`. Then, in the directory `target/release` you will find a file which is called `contourwall_core.dll` or `contourwall_core.so`.
+If you are planning on using it in another language you need to compile it to a `*.so` (for Unix) or `*.dll` (for Windows). Firset change the `crate-type` to `cdylib`, then execute: `cargo build --release`. Then, in the directory `target/release` you will find a file which is called `contourwall_core.dll` or `contourwall_core.so`.
