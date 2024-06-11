@@ -1,5 +1,5 @@
 [package]
-name = "contour_wall"
+name = "contourwall"
 description = "Provides a high-level interface for controlling the Contour Wall"
 version = "0.1.0"
 edition = "2021"
