@@ -206,42 +206,42 @@ mod tests {
     #[test]
     fn test_flash_all_colors() {
         let port = String::from("COM3");
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(port, 2_000_000) else {
+        let Ok(mut cw) = ContourWall::single_new_from_port(port, 2_000_000) else {
             panic!("Port does not exist");
         };
 
         //set all pixels to RED
-        cw.solid_color_w(255, 255, 255);
-        cw.show_w(500, true);
+        cw.solid_color(255, 255, 255);
+        cw.show(500, true);
 
         //set all pixels to RED
-        cw.solid_color_w(0, 255, 255);
-        cw.show_w(500, true);
+        cw.solid_color(0, 255, 255);
+        cw.show(500, true);
 
         //set all pixels to GREEN
-        cw.solid_color_w(0, 255, 0);
-        cw.show_w(500, true);
+        cw.solid_color(0, 255, 0);
+        cw.show(500, true);
 
         //set all pixels to GREEN
-        cw.solid_color_w(255, 255, 0);
-        cw.show_w(500, true);
+        cw.solid_color(255, 255, 0);
+        cw.show(500, true);
 
         //set all pixels to BLUE
-        cw.solid_color_w(255, 0, 0);
-        cw.show_w(500, true);
+        cw.solid_color(255, 0, 0);
+        cw.show(500, true);
 
         //set all pixels to WHITE
-        cw.solid_color_w(255, 0, 255);
-        cw.show_w(500, true);
+        cw.solid_color(255, 0, 255);
+        cw.show(500, true);
 
         //set all pixels to BLACK
-        cw.solid_color_w(0, 0, 0);
-        cw.show_w(500, true);
+        cw.solid_color(0, 0, 0);
+        cw.show(500, true);
     }
 
     #[test]
     fn test_fade_to_white() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        let Ok(mut cw) = ContourWall::single_new_from_port(String::from("COM3"), 2_000_000)
         else {
             panic!("Port does not exist");
         };
@@ -251,16 +251,16 @@ mod tests {
             cw.pixels
                 .slice_mut(s![.., .., ..])
                 .assign(&Array::from(vec![i, i, i]));
-            cw.show_w(10, true);
+            cw.show(10, true);
         }
 
-        cw.solid_color_w(0, 0, 0);
-        cw.show_w(10, true);
+        cw.solid_color(0, 0, 0);
+        cw.show(10, true);
     }
 
     #[test]
     fn test_fade_colors() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        let Ok(mut cw) = ContourWall::single_new_from_port(String::from("COM3"), 2_000_000)
         else {
             panic!("Port does not exist");
         };
@@ -270,16 +270,16 @@ mod tests {
             cw.pixels
                 .slice_mut(s![.., .., ..])
                 .assign(&Array::from(vec![i, 255, 255]));
-            cw.show_w(10, true);
+            cw.show(10, true);
         }
 
-        cw.solid_color_w(0, 0, 0);
-        cw.show_w(10, true);
+        cw.solid_color(0, 0, 0);
+        cw.show(10, true);
     }
 
     #[test]
     fn test_moving_lines() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        let Ok(mut cw) = ContourWall::single_new_from_port(String::from("COM3"), 2_000_000)
         else {
             panic!("Port does not exist");
         };
@@ -290,38 +290,38 @@ mod tests {
         //Move white line over the horizontal axis, from left to right
         for i in 0..20 {
             cw.pixels.slice_mut(s![.., i, ..]).assign(&white);
-            cw.show_w(10, true);
+            cw.show(10, true);
             cw.pixels.slice_mut(s![.., i, ..]).assign(&black);
         }
 
         //Move white line over the horizontal axis, from left to right
         for i in (0..20).rev() {
             cw.pixels.slice_mut(s![.., i, ..]).assign(&white);
-            cw.show_w(10, true);
+            cw.show(10, true);
             cw.pixels.slice_mut(s![.., i, ..]).assign(&black);
         }
 
         //Move white line over the vertical axis, from top to bottom
         for i in 0..20 {
             cw.pixels.slice_mut(s![i, .., ..]).assign(&white);
-            cw.show_w(10, true);
+            cw.show(10, true);
             cw.pixels.slice_mut(s![i, .., ..]).assign(&black);
         }
 
         //Move white line over the vertical axis, from bottom to top
         for i in (0..20).rev() {
             cw.pixels.slice_mut(s![i, .., ..]).assign(&white);
-            cw.show_w(10, true);
+            cw.show(10, true);
             cw.pixels.slice_mut(s![i, .., ..]).assign(&black);
         }
 
-        cw.solid_color_w(0, 0, 0);
-        cw.show_w(10, true);
+        cw.solid_color(0, 0, 0);
+        cw.show(10, true);
     }
 
     #[test]
     fn test_turning_pixels_on_zigzag() {
-        let Ok(mut cw) = ContourWall::single_new_from_port_w(String::from("COM3"), 2_000_000)
+        let Ok(mut cw) = ContourWall::single_new_from_port(String::from("COM3"), 2_000_000)
         else {
             panic!("Port does not exist");
         };
@@ -344,7 +344,7 @@ mod tests {
                     cw.pixels
                         .slice_mut(s![y..(y + 2), x..(x + 2), ..])
                         .assign(&color);
-                    cw.show_w(10, true);
+                    cw.show(10, true);
                 }
                 left_to_right = !left_to_right;
             }
