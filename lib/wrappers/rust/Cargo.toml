@@ -1,9 +1,17 @@
 [package]
 name = "contourwall"
+<<<<<<< HEAD
 description = "High-level Rust interface to control the Contour Wall"
+=======
+description = "Provides a high-level interface for controlling the Contour Wall"
+>>>>>>> 8663c0d7c0d60989e0ab3bcf0337f650399284fd
 version = "0.1.0"
 rust-version = "1.75"
 edition = "2021"
+<<<<<<< HEAD
+=======
+rust-version = "1.75"
+>>>>>>> 8663c0d7c0d60989e0ab3bcf0337f650399284fd
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
