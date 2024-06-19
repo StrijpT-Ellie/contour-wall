@@ -1,5 +1,5 @@
 use contourwall_core::{
-    new, new_with_ports, show, single_new_with_port, update_all, ContourWallCore,
+    new, new_with_ports, solid_color, show, single_new_with_port, update_all, ContourWallCore,
 };
 
 

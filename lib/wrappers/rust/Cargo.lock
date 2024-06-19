@@ -47,7 +47,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "contour_wall"
+name = "contourwall"
 version = "0.1.0"
 dependencies = [
  "contourwall_core",
@@ -57,7 +57,9 @@ dependencies = [
 
 [[package]]
 name = "contourwall_core"
-version = "0.0.0"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcc0cc58f3517eed6d9d03d0bb82e4b4e4b9764a6ea9a90d88decd6b777ea304"
 dependencies = [
  "env_logger",
  "log",
