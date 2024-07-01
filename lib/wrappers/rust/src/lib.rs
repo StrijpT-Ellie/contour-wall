@@ -34,7 +34,7 @@ impl ContourWall {
         //new with zero title
         ContourWall {
             cw_core: new(baud_rate),
-            pixels: ndarray::Array3::<u8>::zeros((20, 20, 3)),
+            pixels: ndarray::Array3::<u8>::zeros((40, 60, 3)),
             pushed_frames: 0,
         }
     }
@@ -59,7 +59,7 @@ impl ContourWall {
                     string_to_str_ptr(ports[5]),
                     baud_rate,
                 ),
-                pixels: ndarray::Array3::<u8>::zeros((20, 20, 3)),
+                pixels: ndarray::Array3::<u8>::zeros((40, 60, 3)),
                 pushed_frames: 0,
             })
         } else {
