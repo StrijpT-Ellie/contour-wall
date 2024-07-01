@@ -1,8 +1,8 @@
 #include <stdint.h>
 #include <FastLED.h>
-#include <EEPROM.h>
+#include <Preferences.h>
 
-#define LED_PIN 12  // Define the pin to which the LED is connected
+#define LED_PIN 14  // Define the pin to which the LED is connected
 #define BUILTIN_LED 2
 #define NUM_LEDS 400
 #define EEPROM_SIZE 1
@@ -17,6 +17,8 @@
 #define STATUS_CODE_OK 100
 #define STATUS_CODE_NEXT 101
 #define STATUS_CODE_RESET 255  // Emptying all serial buffers on both master and slave side, both not sending data for ~100 ms
+
+Preferences preferences;
 
 CRGB leds[NUM_LEDS];
 CRGB leds_old[NUM_LEDS];
@@ -158,7 +160,7 @@ void command_3_update_specific() {
 }
 
 void command_4_get_tile_identifier() {
-  uint8_t tile_identifier = EEPROM.read(EEPROM_IDENT_PTR);
+  int tile_identifier = preferences.getInt("tile_identifier", 0); // 0 is the default value if "my-int" does not exist
   Serial.write(tile_identifier);
   Serial.write(tile_identifier);
 
@@ -179,14 +181,10 @@ void command_5_set_tile_identifier() {
     finalize_command(STATUS_CODE_NON_MATCHING_CRC);
     return;
   }
-  
-  EEPROM.write(EEPROM_IDENT_PTR, identifier);
 
-  if (EEPROM.commit()) {
-    finalize_command(STATUS_CODE_OK);
-  } else {
-    finalize_command(STATUS_CODE_ERROR);
-  }
+  preferences.putInt("tile_identifier", identifier);
+
+  finalize_command(STATUS_CODE_OK);
 }
 
 void command_6_magic_numbers() {
@@ -200,10 +198,9 @@ void setup() {
   pinMode(BUILTIN_LED, OUTPUT);
   digitalWrite(BUILTIN_LED, LOW);
 
-  EEPROM.begin(EEPROM_SIZE);
-
+  preferences.begin("my-app", false);
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-}
+} 
 
 void loop() {
   int data = Serial.read();
