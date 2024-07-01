@@ -63,7 +63,7 @@ class ContourWall:
         self._drop.argtypes = [ctypes.POINTER(ContourWallCore)]
 
         # Initialize the pixel array
-        self.pixels: np.ndarray = None
+        self.pixels: np.ndarray = np.zeros((40, 60, 3), dtype=np.uint8)
 
         # Initialize the pushed frames counter
         self.pushed_frames: int = 0
@@ -83,7 +83,6 @@ class ContourWall:
         This example code will create a new instance of ContourWallCore with the default baudrate of 2_000_000 and will try to find available COM ports.
         """
         self._cw_core = self._new(baudrate)
-        self.pixels: np.ndarray = np.zeros((40, 60, 3), dtype=np.uint8)
 
     def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate: int =2_000_000) -> None:
         """
@@ -101,7 +100,6 @@ class ContourWall:
     
         if check_comport_existence([port1, port2, port3, port4, port5, port6]):
             self._cw_core = self._new_with_ports(port1.encode(), port2.encode(), port3.encode(), port4.encode(), port5.encode(), port6.encode(), baudrate)
-            self.pixels: np.ndarray = np.zeros((40, 60, 3), dtype=np.uint8)
         else:   
             raise Exception(f"one of the COM ports does not exist")
 
@@ -121,7 +119,6 @@ class ContourWall:
 
         if check_comport_existence([port]):
             self._cw_core = self._single_new_with_port(port.encode(), baudrate)
-            self.pixels: np.ndarray = np.zeros((20, 20, 3), dtype=np.uint8)
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
