@@ -1,5 +1,5 @@
 //! Tile struct and implementation. This struct implements the protocol to communicate with individual tiles.
-use std::time::Duration;
+use std::{fs::read, time::Duration};
 
 use crate::{
     status_code::StatusCode,
@@ -226,18 +226,18 @@ impl Tile {
         // If the user opts in into protocol optimization, then a check will be done how different their current framebuffer is to the previous one.
         // If the framebuffer is similar enough (defined below) then a different command will be used to transfer the pixel values.
         // This optimization could allow for a bit faster frametimes.
-        if optimize {
-            let comparison_framebuffer = frame_buffer[0..1200].try_into().unwrap();
-            let mutated_frame_buffer =
-                extract_mutated_pixels(&mut self.previous_framebuffer, &comparison_framebuffer);
-            self.previous_framebuffer = comparison_framebuffer;
-            // If there are less then 100 changed pixels then command_3_update_specific_led will be used.
-            // The 100 is an arbitrary limit. This could very well be changed in the future to decide what the optimal limit is.
-            if mutated_frame_buffer.len() / 5 < 100 {
-                let sent_mutated_frame_buffer: &[u8] = &mutated_frame_buffer;
-                return self.command_3_update_specific_led(sent_mutated_frame_buffer);
-            }
-        }
+        // if optimize {
+        //     let comparison_framebuffer = frame_buffer[0..1200].try_into().unwrap();
+        //     let mutated_frame_buffer =
+        //         extract_mutated_pixels(&mut self.previous_framebuffer, &comparison_framebuffer);
+        //     self.previous_framebuffer = comparison_framebuffer;
+        //     // If there are less then 100 changed pixels then command_3_update_specific_led will be used.
+        //     // The 100 is an arbitrary limit. This could very well be changed in the future to decide what the optimal limit is.
+        //     if mutated_frame_buffer.len() / 5 < 100 {
+        //         let sent_mutated_frame_buffer: &[u8] = &mutated_frame_buffer;
+        //         return self.command_3_update_specific_led(sent_mutated_frame_buffer);
+        //     }
+        // }
 
         // Write framebuffer over serial to tile
         if self.write_over_serial(&frame_buffer).is_err() {
@@ -354,7 +354,7 @@ impl Tile {
         if self.read_from_serial(read_buf).is_err() {
             return (StatusCode::ErrorInternal, 0);
         }
-
+        println!("{:?}", read_buf);
         if StatusCode::new(read_buf[2]).is_none() {
             (StatusCode::ErrorInternal, 0)
         } else {

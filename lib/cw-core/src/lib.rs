@@ -129,24 +129,29 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
 
         let tile = Tile::init(port.port_name.clone(), baud_rate);
         let mut tile = match tile {
-            Ok(tile) => tile,
+            Ok(tile) => {
+                tile
+            },
             Err(error) => {
-                info!(
+                println!(
                     "'{}', is not an ELLIE tile, because: {:?}",
                     port.port_name, error
                 );
                 continue;
             }
         };
-
+        println!("{:?}", port);
         let (status_code, identifier) = tile.command_4_get_tile_identifier();
         if status_code == StatusCode::Ok {
+            println!("Identifier: {}", identifier);
             tiles[identifier as usize - 1] = Some(tile);
+        } else {
+            println!("awdadwdaw");
         }
     }
 
     let mut tiles: Vec<Tile> = tiles.into_iter().flat_map(|tile| tile).collect();
-
+    println!("{}", tiles.len());
     // TODO: Implement actual error that does not crash the program
     assert_eq!(
         tiles.len(),
@@ -208,19 +213,24 @@ pub extern "C" fn new_with_ports(
     // Ensure we have exactly 6 ports
     assert_eq!(com_ports.len(), 6);
 
-    let mut tiles: Vec<Tile> = Vec::with_capacity(6);
+    let mut tiles: Vec<Option<Tile>> = Vec::with_capacity(6);
+    for _ in 0..6 {
+        tiles.push(None);
+    }
 
     for (i, com_port) in com_ports.into_iter().enumerate() {
         let tile = Tile::init(com_port.clone(), baud_rate);
         let tile = match tile {
             Ok(tile) => tile,
             Err(error) => {
-                info!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+                println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
                 continue;
             }
         };
-        tiles[i] = tile;
+        tiles[i] = Some(tile);
     }
+
+    let mut tiles: Vec<Tile> = tiles.into_iter().flat_map(|tile| tile).collect();
 
     let tiles_ptr = tiles.as_mut_ptr();
     let tiles_len = tiles.len();
@@ -251,12 +261,11 @@ pub extern "C" fn new_with_ports(
 #[no_mangle]
 pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) -> ContourWallCore {
     let com_port = util::str_ptr_to_string(com_port);
-    
     let tile = Tile::init(com_port.clone(), baud_rate);
     let tile = match tile {
         Ok(tile) => tile,
         Err(error) => {
-            error!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+            println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
             todo!();
         }
     };
@@ -383,6 +392,26 @@ pub extern "C" fn solid_color(this: &mut ContourWallCore, red: u8, green: u8, bl
     tiles.par_iter_mut().for_each(|tile| {
         let _status_code = tile.command_1_solid_color(red, green, blue);
     });
+}
+
+#[no_mangle]
+pub extern "C" fn set_tile_identifier(com_port: *const c_char, baud_rate: u32, identifier: u8) -> bool {
+    let com_port = util::str_ptr_to_string(com_port);
+    
+    let tile = Tile::init(com_port.clone(), baud_rate);
+    let mut tile = match tile {
+        Ok(tile) => tile,
+        Err(error) => {
+            error!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+            return false;
+        }
+    };
+
+    if let StatusCode::Ok = tile.command_5_set_tile_identifier(identifier) {
+        true
+    } else {
+        false
+    }
 }
 
 /// Transfers ownership of the ContourWallCore object back to Rust and frees the memory.

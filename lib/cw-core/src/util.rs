@@ -51,8 +51,8 @@ pub fn split_framebuffer(framebuffer: &[u8]) -> Vec<Vec<u8>> {
     let mut framebuffers: Vec<Vec<u8>> = vec![Vec::with_capacity(1200); 6];
 
     for (i, v) in framebuffer.iter().enumerate() {
-        let column: usize = i / 2400;
-        let row: usize = ((i % 120) > 59) as usize * 3;
+        let row: usize = i / 3600;
+        let column = ((i % 180)/60)*2;
 
         framebuffers[column + row].push(*v);
     }
