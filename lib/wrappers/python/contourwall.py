@@ -8,7 +8,7 @@ import time
 class ContourWallCore(ctypes.Structure):
     """
     ContourWallCore is a ctypes structure that is used to communicate with the Rust shared object. It contains the following fields:
-    - tiles_ptr: A pointer to an array of tiles in the Rust shared object, based on the phisical tiles which together are called the 'Contour Wall'.
+    - tiles_ptr: A pointer to an array of tiles in the Rust shared object, based on the physical tiles which together are called the 'Contour Wall'.
     - tiles_len: The length of the tiles array in the Rust shared object, also known as the total count of objects in the array.
     """
     _fields_ = [
@@ -27,8 +27,10 @@ class ContourWall:
         # Load the Rust library based on the operating system
         if platform == "win32":
             self.__lib = ctypes.CDLL("./contourwall_core.dll")
-        elif platform in ["darwin", "linux"]:
+        elif platform =="linux":
             self.__lib = ctypes.CDLL("./contourwall_core.so")
+        elif platform =="darwin":
+            self.__lib = ctypes.CDLL("./contourwall_core.dylib")
         else:
             raise Exception(f"'{platform}' is not a supported operating system")
 
