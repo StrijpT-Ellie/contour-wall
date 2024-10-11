@@ -37,9 +37,9 @@ pub fn generate_index_conversion_vector() -> [usize; 1200] {
     let mut index = 0;
     for column in matrix.iter() {
         for &element in column.iter() {
-            result[index] = element;
+            result[index + 0] = element + 2;
             result[index + 1] = element + 1;
-            result[index + 2] = element + 2;
+            result[index + 2] = element + 0;
             index += 3;
         }
     }
