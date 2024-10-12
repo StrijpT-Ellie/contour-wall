@@ -69,6 +69,7 @@ class ContourWall:
 
         # Initialize the pushed frames counter
         self.pushed_frames: int = 0
+        self.__is_initialized = False
 
     def new(self, baudrate: int=2_000_000) -> None:
         """
@@ -84,7 +85,9 @@ class ContourWall:
         ```
         This example code will create a new instance of ContourWallCore with the default baudrate of 2_000_000 and will try to find available COM ports.
         """
+        
         self._cw_core = self._new(baudrate)
+        self.__is_initialized = True
 
     def new_with_ports(self, port1: str, port2: str, port3: str, port4: str, port5: str, port6: str, baudrate: int =2_000_000) -> None:
         """
@@ -102,6 +105,7 @@ class ContourWall:
     
         if check_comport_existence([port1, port2, port3, port4, port5, port6]):
             self._cw_core = self._new_with_ports(port1.encode(), port2.encode(), port3.encode(), port4.encode(), port5.encode(), port6.encode(), baudrate)
+            self.__is_initialized = True    
         else:   
             raise Exception(f"one of the COM ports does not exist")
 
@@ -121,6 +125,7 @@ class ContourWall:
 
         if check_comport_existence([port]):
             self._cw_core = self._single_new_with_port(port.encode(), baudrate)
+            self.__is_initialized = True
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
@@ -138,6 +143,8 @@ class ContourWall:
         This example code will show the current state of the pixel array on the ContourWall.
         """
         
+        self.__check_initialization()
+
         ptr: ctypes._Pointer[c_uint8] = ctypes.cast(ctypes.c_char_p(self.pixels.tobytes()), ctypes.POINTER(ctypes.c_uint8))
         self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
@@ -156,13 +163,22 @@ class ContourWall:
         This example code will fill the entire ContourWall with the color red and will show the filled ContourWall.
         """
 
+        self.__check_initialization()
+
         self._solid_color(ctypes.byref(self._cw_core), r, g, b)
         self.pixels[:] = r, g, b
 
     def drop(self) -> None:
         """Drop the ContourWallCore instance"""
+        
+        self.__check_initialization()
 
         self._drop(ctypes.byref(self._cw_core))
+
+    def __check_initialization(self):
+        if not self.__is_initialized:
+            print("\033[91m[CONTOURWALLEMULATOR ERROR]\033[0m Please initialize the wall using:\n  - ContourWallEmulator.new()\n  - ContourWallEmulator.single_new_with_port()\n  - ContourWallEmulator.new()")
+            exit(1)
 
 def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int]:
     """
