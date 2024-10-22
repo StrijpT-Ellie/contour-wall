@@ -36,13 +36,13 @@ class ContourWallEmulator:
                 top_left = (col * self.cell_size, row * self.cell_size)
                 bottom_right = ((col + 1) * self.cell_size, (row + 1) * self.cell_size)
                 color = tuple(int(c) for c in self.pixels[row, col])
-                cv.rectangle(self.matrix, top_left, bottom_right, color,-1)
+                cv.rectangle(self.__matrix, top_left, bottom_right, color,-1)
 
                 border_color = (0, 0, 0) 
-                cv.rectangle(self.matrix, top_left, bottom_right, border_color, 1)
+                cv.rectangle(self.__matrix, top_left, bottom_right, border_color, 1)
                 self.pushed_frames += 1
 
-        cv.imshow('Contour Wall Emulator', self.matrix)
+        cv.imshow('Contour Wall Emulator', self.__matrix)
         cv.waitKey(1)
         
         if sleep_ms > 0:
