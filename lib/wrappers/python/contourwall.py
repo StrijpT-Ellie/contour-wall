@@ -138,7 +138,12 @@ class ContourWall:
         ```
         This example code will show the current state of the pixel array on the ContourWall.
         """
-        self.pixels[:] = np.clip(self.pixels[:] * brightness, 0, 255)
+
+        if not (0 <= brightness <= 1):
+            print(f"[Contour Wall Warning] Brightness needs to be a float between 0 and 1, not {brightness}.")
+            brightness = max(0, min(brightness, 1))
+
+        self.pixels[:] = self.pixels[:] // (1 / brightness)
         ptr: ctypes._Pointer[c_uint8] = ctypes.cast(ctypes.c_char_p(self.pixels.tobytes()), ctypes.POINTER(ctypes.c_uint8))
         self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
