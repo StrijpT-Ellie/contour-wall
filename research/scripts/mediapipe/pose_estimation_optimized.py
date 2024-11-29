@@ -6,8 +6,8 @@ import cv2 as cv
 import mediapipe as mp
 import numpy as np
 
-WIDTH = 1280
-HEIGHT = 720
+WIDTH_FRAME, HEIGHT_FRAME = (1280, 720)
+WIDTH_OUTPUT, HEIGHT_OUTPUT = (40, 30)
 
 def pythagoras_normalized(landmarkA, landmarkB):
     return math.sqrt(
@@ -30,38 +30,50 @@ def draw_line(landmarkA, landmarkB, frame, wideBoyFactor, hex="FFFFFF"):
     )
 
 def estimate_pose(cam_or_vid: str):
-    blackBg = np.zeros((HEIGHT, WIDTH, 3), dtype = np.uint8)
+    output = np.zeros((HEIGHT_FRAME, WIDTH_FRAME, 3), dtype = np.uint8)
     mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose()
 
     previous_frame_time = 0
 
-    cap = cv.VideoCapture(0, cv.CAP_DSHOW) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid, cv.CAP_DSHOW)
+    cap = cv.VideoCapture(1) if cam_or_vid == "--webcam" else cv.VideoCapture(cam_or_vid)
     pose = mp_pose.Pose(
         min_detection_confidence=0.5, min_tracking_confidence=0.5, model_complexity=0
     )
 
     while True:
-        _, frame = cap.read()
+        ret, frame = cap.read()
+        
+        if not ret:
+            print("[ERROR] Could not read webcam or video")
+            exit(1)
 
-        w, h = (40, 30)
-
-        frame = cv.resize(frame, (WIDTH, HEIGHT))
-
+        frame = cv.resize(frame, (WIDTH_FRAME, HEIGHT_FRAME))
         frame = cv.flip(frame, 1)
 
-        cv.rectangle(blackBg, (0, 0), (WIDTH-1, HEIGHT-1), (0, 0, 0), -1)
+        output[:] = 0, 0, 0
 
-        frame.flags.writeable = False
-        frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         results = pose.process(frame)
 
         frame.flags.writeable = True
         frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
 
+        if results.pose_landmarks is None:
+            print("No people detected...")
+            
+            output[:] = 0, 0, 0
+            output_pixelated = cv.resize(output, (WIDTH_OUTPUT, HEIGHT_OUTPUT), interpolation=cv.INTER_LINEAR)
+            output_pixelated = cv.resize(output_pixelated, (WIDTH_FRAME, HEIGHT_FRAME), interpolation=cv.INTER_NEAREST)
+
+            cv.imshow("Extrapolated pose pixelated", output_pixelated)
+            cv.imshow("Extrapolated pose", output)  
+        
+            continue
+
+        frame.flags.writeable = True
+        frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
         try:
             for landmark in results.pose_landmarks.landmark:
-                landmark.x, landmark.y = landmark.x * WIDTH, landmark.y * HEIGHT
+                landmark.x, landmark.y = landmark.x * WIDTH_FRAME, landmark.y * HEIGHT_FRAME
                 
             leftEyeInner = results.pose_landmarks.landmark[1]
             leftMouth = results.pose_landmarks.landmark[9]
@@ -110,11 +122,11 @@ def estimate_pose(cam_or_vid: str):
             fps = 1 / (cTime - previous_frame_time)
             previous_frame_time = cTime
 
-            cv.fillPoly(blackBg, [chestPts], color=(255, 255, 255))
-            cv.fillPoly(blackBg, [neckPts], color=(255, 255, 255))
+            cv.fillPoly(output, [chestPts], color=(255, 255, 255))
+            cv.fillPoly(output, [neckPts], color=(255, 255, 255))
 
             cv.ellipse(
-                blackBg,
+                output,
                 (int((rightEyeInner.x + leftEyeInner.x)/2),
                 int((rightEyeInner.y + leftEyeInner.y)/2)),
                 (int(pythagoras_normalized(rightShoulder, leftShoulder)*0.3),
@@ -127,7 +139,7 @@ def estimate_pose(cam_or_vid: str):
                 )
             
             cv.ellipse(
-                blackBg,
+                output,
                 (int(leftWrist.x),
                  int(leftWrist.y)),
                 (int(pythagoras_normalized(leftWrist, leftIndex)*0.75),
@@ -140,7 +152,7 @@ def estimate_pose(cam_or_vid: str):
                 )
             
             cv.ellipse(
-                blackBg,
+                output,
                 (int(rightWrist.x),
                  int(rightWrist.y)),
                 (int(pythagoras_normalized(rightWrist, rightIndex)*0.75),
@@ -152,46 +164,45 @@ def estimate_pose(cam_or_vid: str):
                 -1
                 )
 
-            draw_line(leftShoulder, rightShoulder, blackBg, 7)
+            draw_line(leftShoulder, rightShoulder, output, 7)
 
-            draw_line(leftHip, rightHip, blackBg, 7)
+            draw_line(leftHip, rightHip, output, 7)
 
-            draw_line(leftShoulder, leftElbow, blackBg, 3.8)
+            draw_line(leftShoulder, leftElbow, output, 3.8)
 
-            draw_line(leftElbow, leftWrist, blackBg, 5)
+            draw_line(leftElbow, leftWrist, output, 5)
 
-            draw_line(leftShoulder, leftHip, blackBg, 6.5)
+            draw_line(leftShoulder, leftHip, output, 6.5)
 
-            draw_line(leftHip, leftKnee, blackBg, 3)
+            draw_line(leftHip, leftKnee, output, 3)
 
-            draw_line(leftKnee, leftAnkle, blackBg, 3.5)
+            draw_line(leftKnee, leftAnkle, output, 3.5)
 
-            draw_line(rightShoulder, rightElbow, blackBg, 3.8)
+            draw_line(rightShoulder, rightElbow, output, 3.8)
 
-            draw_line(rightElbow, rightWrist, blackBg, 5)
+            draw_line(rightElbow, rightWrist, output, 5)
 
-            draw_line(rightShoulder, rightHip, blackBg, 6.5)
+            draw_line(rightShoulder, rightHip, output, 6.5)
 
-            draw_line(rightHip, rightKnee, blackBg, 3)
+            draw_line(rightHip, rightKnee, output, 3)
 
-            draw_line(rightKnee, rightAnkle, blackBg, 3.5)
+            draw_line(rightKnee, rightAnkle, output, 3.5)
 
-            pixelBlackBg = cv.resize(blackBg, (w, h), interpolation=cv.INTER_LINEAR)
-
-            pixelBlackBg = cv.resize(pixelBlackBg, (WIDTH, HEIGHT), interpolation=cv.INTER_NEAREST)
+            output_pixelated = cv.resize(output, (WIDTH_OUTPUT, HEIGHT_OUTPUT), interpolation=cv.INTER_LINEAR)
+            output_pixelated = cv.resize(output_pixelated, (WIDTH_FRAME, HEIGHT_FRAME), interpolation=cv.INTER_NEAREST)
 
             cv.putText(
-                blackBg, "fps: " + str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3
+                output, "fps: " + str(int(fps)), (70, 50), cv.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3
             )
 
-            cv.imshow("Extrapolated pose", blackBg)
-
-            cv.imshow("Extrapolated pose pixelated", pixelBlackBg)
+            cv.imshow("Extrapolated pose", output)
+            cv.imshow("Extrapolated pose pixelated", output_pixelated)
 
             if cv.waitKey(1) & 0xFF == ord("q"):
                 break
         
-        except: 
+        except Exception as e:
+            print(f"Error: {e}")
             print("sum ting wong")
             break
 

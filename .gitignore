@@ -1,6 +1,7 @@
 # Editors
 .vs/
 .idea/
+./vscode/
 
 # Language things
 __pycache__/
