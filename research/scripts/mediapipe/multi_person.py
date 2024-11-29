@@ -241,7 +241,7 @@ class PoseMultiDetector:
 
         out = cv2.VideoWriter(temp_video_path, self.fourcc, 30.0, (self.width, self.height))
         with vision.PoseLandmarker.create_from_options(self.options) as landmarker:
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(1)
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
