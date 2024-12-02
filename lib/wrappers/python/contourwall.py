@@ -4,6 +4,7 @@ import ctypes
 from ctypes import c_void_p, c_char_p, c_uint32, c_uint8, c_bool
 from sys import platform
 import time
+import os
 
 class ContourWallCore(ctypes.Structure):
     """
@@ -124,7 +125,7 @@ class ContourWall:
         else:
             raise Exception(f"COM port '{port}' does not exist")
 
-    def show(self, sleep_ms:int=0, optimize:bool=True) -> None:
+    def show(self, sleep_ms:int=0, optimize:bool=True, brightness:float=1) -> None:
         """
         Show the current state of the pixel array on the ContourWall.
 
@@ -137,7 +138,12 @@ class ContourWall:
         ```
         This example code will show the current state of the pixel array on the ContourWall.
         """
-        
+
+        if not (0 <= brightness <= 1):
+            print(f"[Contour Wall Warning] Brightness needs to be a float between 0 and 1, not {brightness}.")
+            brightness = max(0, min(brightness, 1))
+
+        self.pixels[:] = self.pixels[:] // (1 / brightness)
         ptr: ctypes._Pointer[c_uint8] = ctypes.cast(ctypes.c_char_p(self.pixels.tobytes()), ctypes.POINTER(ctypes.c_uint8))
         self._update_all(ctypes.byref(self._cw_core), ptr, optimize)
         self._show(ctypes.byref(self._cw_core))
@@ -229,6 +235,9 @@ def check_comport_existence(COMports: list[str]) -> bool:
     """
     
     for COMport in COMports:
+        if os.path.islink(COMport):
+            COMport = os.path.realpath(COMport)
+
         if not any(port.device == COMport for port in serial.tools.list_ports.comports()):
             return False
     return True
