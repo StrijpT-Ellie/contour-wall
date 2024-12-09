@@ -79,7 +79,6 @@ class PoseMultiDetector:
     
     def draw_landmarks_on_image(self, landmarks):
         pose_landmarks_list = landmarks.pose_landmarks #Extracts the list of detected pose landmarks from the detection_result from mediapipe.
-
         annotated_image = np.zeros((HEIGHT_FRAME, WIDTH_FRAME, 3), dtype = np.uint8)
 
         person_li = [] #store the landmarks of all detected individuals in the frame
@@ -93,16 +92,6 @@ class PoseMultiDetector:
                     y=landmark.y,
                     z=landmark.z) for landmark in pose_landmarks
             ])
-            peak_array = [] # stores the coordinates of all landmarks for a single person
-            for landmark in pose_landmarks:
-                peak_array.append([landmark.x, landmark.y, landmark.z])
-                                 
-            person_li.append(np.array(peak_array))
-            # mp.solutions.drawing_utils.draw_landmarks(
-            #     annotated_image,
-            #     pose_landmarks_proto,
-            #     mp.solutions.pose.POSE_CONNECTIONS,
-            #     mp.solutions.drawing_styles.get_default_pose_landmarks_style()) #hier wordem de lijnen gemaakt
             
             for landmark in pose_landmarks:
                     landmark.x, landmark.y = landmark.x * WIDTH_FRAME, landmark.y * HEIGHT_FRAME
@@ -150,6 +139,7 @@ class PoseMultiDetector:
             )
 
             neckPts = neckPts.reshape((-1, 1, 2))
+            
 
             cv2.fillPoly(annotated_image, [chestPts], color=(255, 255, 255))
             cv2.fillPoly(annotated_image, [neckPts], color=(255, 255, 255))
@@ -194,27 +184,16 @@ class PoseMultiDetector:
                 )
 
             draw_line(leftShoulder, rightShoulder, annotated_image, 7)
-
             draw_line(leftHip, rightHip, annotated_image, 7)
-
             draw_line(leftShoulder, leftElbow, annotated_image, 3.8)
-
             draw_line(leftElbow, leftWrist, annotated_image, 5)
-
             draw_line(leftShoulder, leftHip, annotated_image, 6.5)
-
             draw_line(leftHip, leftKnee, annotated_image, 3)
-
             draw_line(leftKnee, leftAnkle, annotated_image, 3.5)
-
             draw_line(rightShoulder, rightElbow, annotated_image, 3.8)
-
             draw_line(rightElbow, rightWrist, annotated_image, 5)
-
             draw_line(rightShoulder, rightHip, annotated_image, 6.5)
-
             draw_line(rightHip, rightKnee, annotated_image, 3)
-
             draw_line(rightKnee, rightAnkle, annotated_image, 3.5)
         
             output_pixelated = cv2.resize(annotated_image, (WIDTH_OUTPUT, HEIGHT_OUTPUT), interpolation=cv2.INTER_LINEAR)
@@ -222,7 +201,6 @@ class PoseMultiDetector:
             
         self.landmark_arr.append(np.array(person_li))
     
-            
         return annotated_image
 
     # Function gets called, when landmarker.detect_async() is done.
@@ -234,12 +212,13 @@ class PoseMultiDetector:
             self.draw_landmarks_on_image(landmarks), cv2.COLOR_RGB2BGR)
 
     def detect_pose_landmarks(self):
-        os.makedirs(name = self.save_dir, exist_ok = True)
-        temp_video_path = os.path.abspath(os.path.join(self.save_dir, self.video_path[0]+'_m.mp4'))
+        # os.makedirs(name = self.save_dir, exist_ok = True)
+        # temp_video_path = os.path.abspath(os.path.join(self.save_dir, self.video_path[0]+'_m.mp4'))
         
-        self.fourcc = cv2.VideoWriter_fourcc(*'avc1')
+        # self.fourcc = cv2.VideoWriter_fourcc(*'avc1')
 
-        out = cv2.VideoWriter(temp_video_path, self.fourcc, 30.0, (self.width, self.height))
+        # out = cv2.VideoWriter(temp_video_path, self.fourcc, 30.0, (self.width, self.height))
+        previous_frame_time = 0
         with vision.PoseLandmarker.create_from_options(self.options) as landmarker:
             cap = cv2.VideoCapture(1)
             while cap.isOpened():
@@ -260,26 +239,35 @@ class PoseMultiDetector:
                     # Resize and flip the frame to fit the target dimensions
                     frame = cv2.resize(self.to_window, (WIDTH_FRAME, HEIGHT_FRAME))
                     frame = cv2.flip(frame, 1)
+                    cTime = time.time()
+                    fps = 1 / (cTime - previous_frame_time) if previous_frame_time > 0 else 0
+                    previous_frame_time = cTime
                     
                     output_pixelated = cv2.resize(frame, (WIDTH_OUTPUT, HEIGHT_OUTPUT), interpolation=cv2.INTER_LINEAR)
                     output_pixelated = cv2.resize(output_pixelated, (WIDTH_FRAME, HEIGHT_FRAME), interpolation=cv2.INTER_NEAREST)
+                    cv2.putText(
+                        frame, "fps: " + str(int(fps)), (70, 50), cv2.FONT_HERSHEY_PLAIN, 3, (3, 252, 177), 3
+                    )
                     # Save and display the video
-                    out.write(frame)
+                    # out.write(frame)
                     cv2.imshow("MediaPipe Pose Landmark", frame)
                     cv2.imshow("MediaPipe Pose Landmark Pixelated", output_pixelated)
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
             cap.release()
-            out.release()
+            # out.release()
             
         array = np.transpose(np.array(self.landmark_arr), (1,0,2,3))
         return array, temp_video_path 
     
-    def add_center(self, landmark):
-        landmark = np.concatenate([landmark, np.mean(landmark[:, :, [11, 23], :], axis=2, keepdims=True)], axis=2) # add center left indices(xyz)
-        landmark = np.concatenate([landmark, np.mean(landmark[:, :, [12, 24], :], axis=2, keepdims=True)], axis=2) # add center right indices(xyz)
-        return landmark
+
+    #isnt really necessary 
+
+    # def add_center(self, landmark):
+    #     landmark = np.concatenate([landmark, np.mean(landmark[:, :, [11, 23], :], axis=2, keepdims=True)], axis=2) # add center left indices(xyz)
+    #     landmark = np.concatenate([landmark, np.mean(landmark[:, :, [12, 24], :], axis=2, keepdims=True)], axis=2) # add center right indices(xyz)
+    #     return landmark
         
         
     def run(self):
@@ -289,7 +277,7 @@ class PoseMultiDetector:
         return self.array, self.temp_video_path
 
 if __name__ == '__main__':
-    start_time = time.time()  # 시작 시간 기록
+    start_time = time.time() 
     
     # model_path src : https://developers.google.com/mediapipe/solutions/vision/pose_landmarker#models 
     detector = PoseMultiDetector(video_path=["test3.mp4"], load_dir=".", save_dir=".", model_path="pose_landmarker_lite.task")
