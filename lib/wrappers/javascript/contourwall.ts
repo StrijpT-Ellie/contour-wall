@@ -1,15 +1,15 @@
-// Implement the new function
-// Implement the "pushed_frames" field, which gets increased at every show call.
-// Remove "configure_threadpool" function
 // Implement sleep_ms field parameter for show function
 // Find numpy alternative for the pixels field. You want a high-level 3D matrix, not a low-level byte array
+import time 
 
 class ContourWall {
-  private lib;
+  private lib
   private cw_core_ptr: null|Deno.UnsafePointer;
+  private baudrate: number; 
   pixels = new Uint8Array(7200); 
+  pushed_frames: number = 0;
 
-  constructor() {
+  constructor(baudrate = 2000000) {
     let libSuffix = "";
     switch (Deno.build.os) {
       case "windows":
@@ -30,17 +30,22 @@ class ContourWall {
     this.lib = Deno.dlopen(
       contourwall_path,
       {
+        "new": {parameters: ["u32"], result: "pointer"},
         "new_with_ports": { parameters: ["pointer", "pointer", "pointer", "pointer", "pointer", "pointer", "u32"], result: "pointer" },
         "single_new_with_port": { parameters: ["pointer", "u32"], result: "pointer" },
-        "configure_threadpool": { parameters: ["u8"], result: "bool" },
+        // "configure_threadpool": { parameters: ["u8"], result: "bool" }, //does not need to be implemented.
         "show": { parameters: ["pointer"], result: "void" },
         "update_all": { parameters: ["pointer", "pointer", "bool"], result: "void"},
         "solid_color": { parameters: ["pointer", "u8", "u8", "u8"], result: "void"},
-        "drop": { parameters: ["pointer"], result: "void"},
+        "drop": { parameters: ["pointer"], result: "void"}
       } as const,
     );
-
     this.cw_core_ptr = null;
+    this.baudrate = baudrate
+  }
+
+  new(){
+    this.lib.symbols.new(this.baudrate)
   }
 
   new_with_ports(port1: string, port2: string, port3: string, port4: string, port5: string, port6: string) {
@@ -51,27 +56,27 @@ class ContourWall {
           this.string_to_ptr(port4), 
           this.string_to_ptr(port5), 
           this.string_to_ptr(port6), 
-          2000000) as Deno.UnsafePointer;
+          this.baudrate) as Deno.UnsafePointer;
     this.cw_core_ptr = ptr;
   }
   
 
-  single_new_with_port(port: string, baudrate = 2000000) {
+  single_new_with_port(port: string) {
     this.cw_core_ptr = this.lib.symbols.single_new_with_port(
       this.string_to_ptr(port),
-      baudrate
+      this.baudrate
     ) as Deno.UnsafePointer;
   }
 
 
-  show() {
+  show( sleep_ms:number=0,) {
     const buffer = this.pixels.buffer;  
     const framebuffer_ptr = Deno.UnsafePointer.of(buffer);
 
     this.lib.symbols.update_all(this.cw_core_ptr, framebuffer_ptr, false)
     this.lib.symbols.show(this.cw_core_ptr)
-    // this.pushed_frames += 1;?? Wouter
-
+    this.pushed_frames += 1
+    time.sleep(sleep_ms/1000)
   }
 
 
@@ -90,6 +95,3 @@ class ContourWall {
     return ptr
   }
 }
-
-
-

@@ -47,10 +47,6 @@ class ContourWall:
         self._single_new_with_port.argtypes = [c_char_p, c_uint32]
         self._single_new_with_port.restype = ContourWallCore
 
-        self._configure_threadpool = self.__lib.configure_threadpool
-        self._configure_threadpool.argtypes = [c_uint8]
-        self._configure_threadpool.restype = c_bool
-
         self._show = self.__lib.show
         self._show.argtypes = [ctypes.POINTER(ContourWallCore)]
 
