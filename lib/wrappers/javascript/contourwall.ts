@@ -33,7 +33,6 @@ class ContourWall {
         "new": {parameters: ["u32"], result: "pointer"},
         "new_with_ports": { parameters: ["pointer", "pointer", "pointer", "pointer", "pointer", "pointer", "u32"], result: "pointer" },
         "single_new_with_port": { parameters: ["pointer", "u32"], result: "pointer" },
-        // "configure_threadpool": { parameters: ["u8"], result: "bool" }, //does not need to be implemented.
         "show": { parameters: ["pointer"], result: "void" },
         "update_all": { parameters: ["pointer", "pointer", "bool"], result: "void"},
         "solid_color": { parameters: ["pointer", "u8", "u8", "u8"], result: "void"},
