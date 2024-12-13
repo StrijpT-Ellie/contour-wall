@@ -36,6 +36,9 @@ def draw_line(landmarkA, landmarkB, frame, wideBoyFactor, hex="FFFFFF"):
         ),
     )
 
+recorded_frames = []
+is_recording = False
+is_replaying = False
 
 class PoseMultiDetector:
     def __init__(self, video_path:list, load_dir:str, save_dir:str, model_path:str,  num_poses=4, min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5, min_tracking_confidence=0.5):
@@ -273,11 +276,33 @@ class PoseMultiDetector:
                     cv2.imshow("MediaPipe Pose Landmark", frame)
                     cv2.imshow("MediaPipe Pose Landmark Pixelated", output_pixelated)
                     
-                    cw.pixels[:] = output_pixelated
+                    if is_recording:
+                        recorded_frames.append(output_pixelated)
+                        cw.pixels[:] = output_pixelated
+                    if is_replaying:
+                        for replay_frame in recorded_frames:
+                            cw.pixels[:] = replay_frame
+                            cv2.waitKey(33)  # Simulate playback at ~30 FPS
+                    else:
+                        cw.pixels[:] = output_pixelated
+                    
                     cw.show()
                     
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+            
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('r'):
+                self.is_recording = True
+                self.is_replaying = False
+            elif key == ord('p'):
+                self.is_recording = False
+                self.is_replaying = True
+            elif key == ord('q'):
+                self.is_recording = False
+                self.is_replaying = False
+                self.recorded_frames = []
+
             cap.release()
             out.release()
             
