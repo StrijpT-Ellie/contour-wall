@@ -1,6 +1,6 @@
-// Implement sleep_ms field parameter for show function
-// Find numpy alternative for the pixels field. You want a high-level 3D matrix, not a low-level byte array
-import time 
+
+import { cv, cvTranslateError } from 'https://deno.land/x/opencv@v4.3.0-10/mod.ts';
+import { sleep } from "https://deno.land/x/sleep/mod.ts"
 
 class ContourWall {
   private lib
@@ -36,11 +36,14 @@ class ContourWall {
         "show": { parameters: ["pointer"], result: "void" },
         "update_all": { parameters: ["pointer", "pointer", "bool"], result: "void"},
         "solid_color": { parameters: ["pointer", "u8", "u8", "u8"], result: "void"},
-        "drop": { parameters: ["pointer"], result: "void"}
+        "drop": { parameters: ["pointer"], result: "void"},
       } as const,
     );
     this.cw_core_ptr = null;
     this.baudrate = baudrate
+    
+    this.pixels = new cv.Mat(40, 60, cv.CV_8UC3);
+    this.pixels.set([0, 0, 0]); 
   }
 
   new(){
@@ -68,15 +71,19 @@ class ContourWall {
   }
 
 
-  show( sleep_ms:number=0,) {
+  show(sleep_ms: number) { //WOUTTTIEEEE POOUUUUTTYYYYY
     const buffer = this.pixels.buffer;  
     const framebuffer_ptr = Deno.UnsafePointer.of(buffer);
 
     this.lib.symbols.update_all(this.cw_core_ptr, framebuffer_ptr, false)
     this.lib.symbols.show(this.cw_core_ptr)
     this.pushed_frames += 1
-    time.sleep(sleep_ms/1000)
-  }
+
+    //sleep function
+    // const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // await sleep(ms * 1000);
+    sleep(sleep_ms/1000)
+    }
 
 
 
