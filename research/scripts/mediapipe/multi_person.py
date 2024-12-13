@@ -14,7 +14,7 @@ import math
 
 
 WIDTH_FRAME, HEIGHT_FRAME = (1920, 1080)
-WIDTH_OUTPUT, HEIGHT_OUTPUT = (40, 30)
+WIDTH_OUTPUT, HEIGHT_OUTPUT = (60, 40)
 
 def pythagoras_normalized(landmarkA, landmarkB):
     return math.sqrt(
@@ -246,7 +246,7 @@ class PoseMultiDetector:
         cw.new_with_ports("COM6", "COM7", "COM8", "COM9", "COM5", "COM4")
 
         with vision.PoseLandmarker.create_from_options(self.options) as landmarker:
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(1)
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
