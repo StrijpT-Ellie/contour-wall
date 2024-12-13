@@ -5,6 +5,7 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 from tkinter.messagebox import showinfo
+from contourwall import ContourWall
 
 import time
 import tempfile
@@ -240,8 +241,12 @@ class PoseMultiDetector:
         self.fourcc = cv2.VideoWriter_fourcc(*'avc1')
 
         out = cv2.VideoWriter(temp_video_path, self.fourcc, 30.0, (self.width, self.height))
+
+        cw = ContourWall()
+        cw.new_with_ports("COM6", "COM7", "COM8", "COM9", "COM5", "COM4")
+
         with vision.PoseLandmarker.create_from_options(self.options) as landmarker:
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(0)
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
@@ -262,12 +267,15 @@ class PoseMultiDetector:
                     frame = cv2.flip(frame, 1)
                     
                     output_pixelated = cv2.resize(frame, (WIDTH_OUTPUT, HEIGHT_OUTPUT), interpolation=cv2.INTER_LINEAR)
-                    output_pixelated = cv2.resize(output_pixelated, (WIDTH_FRAME, HEIGHT_FRAME), interpolation=cv2.INTER_NEAREST)
+                    #output_pixelated = cv2.resize(output_pixelated, (WIDTH_FRAME, HEIGHT_FRAME), interpolation=cv2.INTER_NEAREST)
                     # Save and display the video
                     out.write(frame)
                     cv2.imshow("MediaPipe Pose Landmark", frame)
                     cv2.imshow("MediaPipe Pose Landmark Pixelated", output_pixelated)
-
+                    
+                    cw.pixels[:] = output_pixelated
+                    cw.show()
+                    
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
             cap.release()
