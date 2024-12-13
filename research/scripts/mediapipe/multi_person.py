@@ -11,10 +11,13 @@ import time
 import tempfile
 import os 
 import math
-
+import keyboard
 
 WIDTH_FRAME, HEIGHT_FRAME = (1920, 1080)
 WIDTH_OUTPUT, HEIGHT_OUTPUT = (60, 40)
+RECORDED_FRAMES = []
+IS_RECORDING = False
+IS_REPLAYING = False
 
 def pythagoras_normalized(landmarkA, landmarkB):
     return math.sqrt(
@@ -35,10 +38,6 @@ def draw_line(landmarkA, landmarkB, frame, wideBoyFactor, hex="FFFFFF"):
             )
         ),
     )
-
-recorded_frames = []
-is_recording = False
-is_replaying = False
 
 class PoseMultiDetector:
     def __init__(self, video_path:list, load_dir:str, save_dir:str, model_path:str,  num_poses=4, min_pose_detection_confidence=0.5, min_pose_presence_confidence=0.5, min_tracking_confidence=0.5):
@@ -247,9 +246,11 @@ class PoseMultiDetector:
 
         cw = ContourWall()
         cw.new_with_ports("COM6", "COM7", "COM8", "COM9", "COM5", "COM4")
-
+        global IS_RECORDING 
+        global IS_REPLAYING
+        global RECORDED_FRAMES
         with vision.PoseLandmarker.create_from_options(self.options) as landmarker:
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(0)
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
@@ -276,32 +277,32 @@ class PoseMultiDetector:
                     cv2.imshow("MediaPipe Pose Landmark", frame)
                     cv2.imshow("MediaPipe Pose Landmark Pixelated", output_pixelated)
                     
-                    if is_recording:
-                        recorded_frames.append(output_pixelated)
+                    if IS_RECORDING:
+                        RECORDED_FRAMES.append(output_pixelated)
                         cw.pixels[:] = output_pixelated
-                    if is_replaying:
-                        for replay_frame in recorded_frames:
+                    if IS_REPLAYING:
+                        for replay_frame in RECORDED_FRAMES:
                             cw.pixels[:] = replay_frame
-                            cv2.waitKey(33)  # Simulate playback at ~30 FPS
+                            cw.show()
                     else:
                         cw.pixels[:] = output_pixelated
                     
                     cw.show()
                     
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                key = cv2.waitKey(1) & 0xFF
+
+                if key == ord('q'):
                     break
-            
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('r'):
-                self.is_recording = True
-                self.is_replaying = False
-            elif key == ord('p'):
-                self.is_recording = False
-                self.is_replaying = True
-            elif key == ord('q'):
-                self.is_recording = False
-                self.is_replaying = False
-                self.recorded_frames = []
+                if key == ord('r'):
+                    IS_RECORDING = True
+                    IS_REPLAYING = False
+                if key == ord('p'):
+                    IS_RECORDING = False
+                    IS_REPLAYING = True
+                if key == ord('s'):
+                    IS_RECORDING = False
+                    IS_REPLAYING = False
+                    RECORDED_FRAMES = []
 
             cap.release()
             out.release()
