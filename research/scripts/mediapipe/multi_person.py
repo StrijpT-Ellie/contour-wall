@@ -7,7 +7,6 @@ from mediapipe.framework.formats import landmark_pb2
 from tkinter.messagebox import showinfo
 
 import time
-import tempfile
 import os 
 import math
 
@@ -220,7 +219,7 @@ class PoseMultiDetector:
         # out = cv2.VideoWriter(temp_video_path, self.fourcc, 30.0, (self.width, self.height))
         previous_frame_time = 0
         with vision.PoseLandmarker.create_from_options(self.options) as landmarker:
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(self.video_source)
             while cap.isOpened():
                 success, image = cap.read()
                 if not success:
