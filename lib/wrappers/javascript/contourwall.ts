@@ -2,7 +2,7 @@
 import { cv, cvTranslateError } from 'https://deno.land/x/opencv@v4.3.0-10/mod.ts';
 import { sleep } from "https://deno.land/x/sleep/mod.ts"
 
-class ContourWall {
+export class ContourWall {
   private lib
   private cw_core_ptr: null|Deno.UnsafePointer;
   private baudrate: number; 
@@ -10,6 +10,7 @@ class ContourWall {
   pushed_frames: number = 0;
 
   constructor(baudrate = 2000000) {
+    
     let libSuffix = "";
     switch (Deno.build.os) {
       case "windows":
@@ -25,8 +26,8 @@ class ContourWall {
         throw new Error(`'${Deno.build.os}' is not a supported operating system`)
     }
 
-    const contourwall_path = `./contourwall_core.${libSuffix}`;
-
+    const contourwall_path = `contourwall_core.${libSuffix}`;
+    console.log(contourwall_path)
     this.lib = Deno.dlopen(
       contourwall_path,
       {
@@ -71,32 +72,27 @@ class ContourWall {
   }
 
 
-  show(sleep_ms: number) { //WOUTTTIEEEE POOUUUUTTYYYYY
+  show(sleep_ms: number) { 
     const buffer = this.pixels.buffer;  
     const framebuffer_ptr = Deno.UnsafePointer.of(buffer);
 
-    this.lib.symbols.update_all(this.cw_core_ptr, framebuffer_ptr, false)
-    this.lib.symbols.show(this.cw_core_ptr)
+    this.lib.symbols.update_all(this.cw_core_ptr as Deno.PointerObject, framebuffer_ptr, false) 
+    this.lib.symbols.show(this.cw_core_ptr as Deno.PointerObject)
     this.pushed_frames += 1
 
-    //sleep function
-    // const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-    // await sleep(ms * 1000);
     sleep(sleep_ms/1000)
     }
 
 
 
   drop() {
-    this.lib.symbols.drop(this.cw_core_ptr);
+    this.lib.symbols.drop(this.cw_core_ptr as Deno.PointerObject);
   }
 
   private string_to_ptr(str: string) {
     const encoder = new TextEncoder();
     const stringBuffer = encoder.encode(str + "\0"); // Add null terminator
-
     const buf = new Uint8Array(stringBuffer);
-
     const ptr = Deno.UnsafePointer.of(buf);
     return ptr
   }
