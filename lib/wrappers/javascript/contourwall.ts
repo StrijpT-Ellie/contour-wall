@@ -1,6 +1,8 @@
 
 import { cv, cvTranslateError } from 'https://deno.land/x/opencv@v4.3.0-10/mod.ts';
 import { sleep } from "https://deno.land/x/sleep/mod.ts"
+import { Mat } from "https://unpkg.com/opencv-wasm@4.3.0-10/types/opencv.ts";
+
 
 export class ContourWall {
   private lib
@@ -42,9 +44,10 @@ export class ContourWall {
     );
     this.cw_core_ptr = null;
     this.baudrate = baudrate
+
     
     this.pixels = new cv.Mat(40, 60, cv.CV_8UC3);
-    this.pixels.set([0, 0, 0]); 
+    this.pixels.setTo(new cv.Scalar(0, 0, 0));
   }
 
   new(){
