@@ -1,5 +1,5 @@
-import { cv, cvTranslateError } from 'https://deno.land/x/opencv@v4.3.0-10/mod.ts';
-import { Mat } from "https://unpkg.com/opencv-wasm@4.3.0-10/types/opencv.ts";
+// import { cv, cvTranslateError } from 'https://deno.land/x/opencv@v4.3.0-10/mod.ts';
+// import { Mat } from "https://unpkg.com/opencv-wasm@4.3.0-10/types/opencv.ts";
 import { ContourWall } from "./contourwall.ts"; 
 
   const cw = new ContourWall();
@@ -14,7 +14,6 @@ import { ContourWall } from "./contourwall.ts";
     "/dev/cu.usbmodem578E0073651"
   );
 
-  cw.pixels.setTo(new cv.Scalar(255, 255, 255)); // Set all pixels to white
   cw.show(100); 
 
  
