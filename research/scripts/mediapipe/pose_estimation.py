@@ -29,7 +29,8 @@ def estimate_pose(cam_or_vid: str):
     previous_frame_time = 0
 
     cap = (
-        cv.VideoCapture(0, cv.CAP_DSHOW)
+        cv.VideoCapture(0)
+        # cv.VideoCapture(0, cv.CAP_DSHOW)
         if cam_or_vid == "--webcam"
         else cv.VideoCapture(cam_or_vid)
     )
