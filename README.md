@@ -4,10 +4,48 @@ This project is a student initiative called "The Contour Wall," which is part of
 
 The Contour Wall is intended to be an abstract, colorful, large-scale display measuring two meters in height and three meters in width. The project aims to serve as a visually striking and inspirational focal point, highlighting the diverse talents and capabilities of Fontys ICT students. By integrating elements from multiple ICT domains, the project provides a hands-on learning experience for the participating students, fostering collaboration, problem-solving, and skill development. And because of its simple and open interface, future students can integrate The Contour Wall into their project.
 
-This repository contains: research, designs, source code and documention of the Contour Wall
+## What’s in this repository
+
+This repository contains **all research, designs, source code, and documentation** related to the Contour Wall:
+
+- Software (core library + wrappers)
+- Firmware for the tiles
+- Hardware and PCB designs
+- Research experiments
+- Example demos
+- Architecture documentation
 
 ![ellie_tq_render](/img/ellie_tq_denoise.png)
 
+---
+## Creating a demo
+
+The Contour Wall can display a wide variety of interactive demos, such as:
+- Visual animations
+- Interactive mirrors using contour detection
+- Games (e.g. Flappy Bird, coin collecting)
+- Sensor-based installations
+
+Several example demos are available in the [`/demos`](./demos) directory.
+
+Demos are to be displayed during school hours. They are meant to be educational for students. To learn new technologies and frameworks and learn how to build and integrate interactive systems.
+
+
+Before creating your own demo, you must:
+1. **Compile the core library** (written in Rust)
+2. **Choose and set up a wrapper language** (Python or Rust)
+3. **Connect to the Contour Wall or use the emulator**
+
+Once your environment is ready, you can:
+- Run existing demos from `/demos`
+- Modify a demo
+- Create your own interactive experience
+
+**Start here**:
+- [Getting started: Compile the core library](lib/README.md )
+- [Getting started: Learning how the Contour wall works](docs/getting_started.md)
+
+---
 ## Documentation readers guide
 
 - [You want to use the Contour Wall for your project](docs/getting_started.md)

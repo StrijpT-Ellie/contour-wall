@@ -1,13 +1,22 @@
-# Python ContourWall Wrapper
+# Python Contour Wall Wrapper 
 
-## How to run
+If you have not yet compiled the core library, start here first:
 
-1. Install Python, version >3.9
-2. Install Cargo
-3. Install modules: `python3 -m pip install -r requirements.txt`
-4. Compile core library located at `contourwall/lib/cw_core`: `cargo build --release`
-5. Move compiled library located in `target/release` directory to same directory as `contourwall.py`
-6. Run: `python3 demo.py`
+-  **[Setup Guide - Compile the core library](../lib/wrappers/README.md)**
+
+---
+
+
+
+## How to run a demo
+
+After compiling the core library, connect your device (Raspberry Pi, Jetson, laptop, etc.) to the Contour Wall. Example demos can be found in the `examples/` directory and in the `../demos` directory.
+
+Running the demo can be done in the terminal of the demo by: 
+```bash
+    python3 demo.py
+```
+
 
 ## Example Usage
 Create a new file and use the import 'from contourwall import ContourWall, hsv_to_rgb', to be able to use the python wrapper.
@@ -26,7 +35,29 @@ for i in range(0, 360):
 cw.fill_solid(0, 0, 0)
 cw.show()
 ```
+---
+## Using the Emulator (no physical wall needed)
 
+When you’re not near the Contour Wall, you can use the Emulator. The emulator behaves exactly like the real wall:
+- Same API 
+- Same frame format 
+- Same timing logic
+
+The only difference is that it renders the output on your screen instead of on the hardware.
+### Starting the emulator
+The emulator is located in `../contourwall_emulator.py`. To start it:
+
+```python
+    python3 emulator.py
+```
+Then, in your demo code, replace the hardware connection with:
+
+```python
+    cw = ContourWall(emulator=True)
+```
+Now every frame you send will appear in a window on your computer.
+
+---
 ## Functions in the python wrapper
 |Type|Classes & Functions|Description|
 |---|---|---|
@@ -40,5 +71,14 @@ cw.show()
 |def|`hsv_to_rgb`|This function is used to convert HSV color code to RGB color code.|
 
 ## Running MyPy typechecker
-
+To check types in the wrapper:
 - `python3 -m mypy contourwall.py --disallow-untyped-defs --allow-redefinition`
+
+
+
+
+
+
+
+
+
