@@ -51,3 +51,49 @@ class ContourWallEmulator:
     def fill_solid(self, r: int, g: int, b: int):
         self.pixels[:] = r, g, b
 
+def hsv_to_rgb(hue: int, saturation: float, value: float) -> tuple[int, int, int]:
+    """
+    Convert HSV to RGB
+
+    This function is used to convert HSV to RGB.
+
+    H, also known as Hue: The hue of the color, ranging from 0 to 380. Hue is a degree on the color wheel from 0 to 380. 0 is red, 120 is green, 240 is blue.
+    S, also known as Saturation: The saturation of the color, ranging from 0 to 100. Saturation is a percentage of the maximum saturation.
+    V, also known as Value: The value of the color, ranging from 0 to 100. Value is a percentage of the maximum brightness.
+
+    Example code:
+    ```
+        r, g, b = hsv_to_rgb(0, 100, 100)
+    ```
+    This example code will convert the color with a hue of 380, a saturation of 100 and a value of 50 to RGB. The result will be a tuple with the RGB values, resulting in [255, 0, 0].
+    """
+
+    hue: float = float(hue) / 100.0
+    saturation /= 100
+    value /= 100
+    
+    if saturation == 0.0: return int(value), int(value), int(value)
+        
+    i = int(hue*6.0) # XXX assume int() truncates!
+    f = (hue*6.0) - i
+    i = i%6
+    
+    p = int(round((value*(1.0 - saturation)) * 255))
+    q = int(round((value*(1.0 - saturation*f)) * 255))
+    t = int(round((value*(1.0 - saturation*(1.0-f))) * 255))
+    value = int(round(value*255))
+    
+    if i == 0:
+        return value, t, p
+    if i == 1:
+        return q, value, p
+    if i == 2:
+        return p, value, t
+    if i == 3:
+        return p, q, value
+    if i == 4:
+        return t, p, value
+    if i == 5:
+        return value, p, q
+        
+    return 0, 0, 0

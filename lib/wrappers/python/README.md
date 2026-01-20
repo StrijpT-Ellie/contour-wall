@@ -1,22 +1,18 @@
 # Python Contour Wall Wrapper 
 
-If you have not yet compiled the core library, start here first:
+If you have not yet compiled the core library, you find a setup script in the README in the root of the repository. Or start here first by compiling it yourself:
 
 -  **[Setup Guide - Compile the core library](../lib/wrappers/README.md)**
 
----
-
-
-
 ## How to run a demo
 
-After compiling the core library, connect your device (Raspberry Pi, Jetson, laptop, etc.) to the Contour Wall. Example demos can be found in the `examples/` directory and in the `../demos` directory.
+After compiling the core library, connect your device (Raspberry Pi, Jetson, laptop, etc.) to the Contour Wall. Example demos can be found in the [/demos](../../../demos/) directory.
 
-Running the demo can be done in the terminal of the demo by: 
+Running is done like this:
 ```bash
-    python3 demo.py
+python3 -m pip install -r requirements.txt
+python3 demo.py
 ```
-
 
 ## Example Usage
 Create a new file and use the import 'from contourwall import ContourWall, hsv_to_rgb', to be able to use the python wrapper.
@@ -27,7 +23,7 @@ To utilize this library, ensure you have the necessary serial port permissions a
 from contourwall import ContourWall, hsv_to_rgb
 
 cw = ContourWall()
-cw.single_new_with_port("COM3")
+cw.new()
 
 for i in range(0, 360):
     cw.pixels[:] =  hsv_to_rgb(i, 100, 100)
@@ -36,26 +32,35 @@ cw.fill_solid(0, 0, 0)
 cw.show()
 ```
 ---
+
 ## Using the Emulator (no physical wall needed)
 
 When you’re not near the Contour Wall, you can use the Emulator. The emulator behaves exactly like the real wall:
+
 - Same API 
 - Same frame format 
-- Same timing logic
 
 The only difference is that it renders the output on your screen instead of on the hardware.
+
 ### Starting the emulator
-The emulator is located in `../contourwall_emulator.py`. To start it:
 
-```python
-    python3 emulator.py
-```
-Then, in your demo code, replace the hardware connection with:
+The emulator is located in [/lib/wrapper/contourwall_emulator](./contourwall_emulator.py), or can be found in the release folder for your architecture. Since the API is very similar you only need to change the import of the `ContourWall` class.
 
-```python
-    cw = ContourWall(emulator=True)
+``` Python
+# from `ContourWall` to `ContourWallEmulator`
+from contourwall_emulator import ContourWallEmulator, hsv_to_rgb
+
+# Also changed from `ContourWall` to `ContourWallEmulator`
+cw = ContourWallEmulator()
+cw.new()
+
+for i in range(0, 360):
+    cw.pixels[:] =  hsv_to_rgb(i, 100, 100)
+    cw.show()
+cw.fill_solid(0, 0, 0)
+cw.show()
 ```
-Now every frame you send will appear in a window on your computer.
+Now every frame you send will appear in a window on your computer using OpenCV.
 
 ---
 ## Functions in the python wrapper

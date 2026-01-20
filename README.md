@@ -30,11 +30,21 @@ Several example demos are available in the [`/demos`](./demos) directory.
 
 Demos are to be displayed during school hours. They are meant to be educational for students. To learn new technologies and frameworks and learn how to build and integrate interactive systems.
 
+To create a demo in Python3, download and unzip a setup example for your architecture and OS. Copy the command in the terminal:
 
+- **Windows x86_65:** `curl.exe -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/v0.1.0-beta/cw_setup_win_x86_64.zip; Expand-Archive -Path setup.zip -DestinationPath .; Remove-Item setup.zip`
+- **Linux x86_64:** `curl -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/v0.1.0-beta/cw_setup_linux_x86_64.zip && unzip setup.zip && rm setup.zip`
+- **MacOS ARM:** `curl -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/v0.1.0-beta/cw_setup_macos_arm.zip && unzip setup.zip && rm setup.zip`
+- Sadly we do not have a pre-compiled setup for you, [you have to compile it yourself](#compiling-your-own-setup).
+
+Documentation of the wrappers are included in the actual source code above each function. Refer to demos for more context.
+
+### Compiling your own setup
 Before creating your own demo, you must:
-1. **Compile the core library** (written in Rust)
-2. **Choose and set up a wrapper language** (Python or Rust)
+1. **Compile the core library** (written in Rust): [lib/cw-core](lib/cw-core/)
+2. **Choose and set up a wrapper language** (Python or Rust): [lib/wrappers](lib/wrappers/)
 3. **Connect to the Contour Wall or use the emulator**
+   - Emulator: : [lib/wrappers/python/contourwall_emulator.py](lib/wrappers/contourwall_emulator.py)
 
 Once your environment is ready, you can:
 - Run existing demos from `/demos`
