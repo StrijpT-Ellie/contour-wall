@@ -32,9 +32,9 @@ Demos are to be displayed during school hours. They are meant to be educational 
 
 To create a demo in Python3, download and unzip a setup example for your architecture and OS. Copy the command in the terminal:
 
-- **Windows x86_65:** `curl.exe -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/v0.1.0-beta/cw_setup_win_x86_64.zip; Expand-Archive -Path setup.zip -DestinationPath .; Remove-Item setup.zip`
-- **Linux x86_64:** `curl -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/v0.1.0-beta/cw_setup_linux_x86_64.zip && unzip setup.zip && rm setup.zip`
-- **MacOS ARM:** `curl -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/v0.1.0-beta/cw_setup_macos_arm.zip && unzip setup.zip && rm setup.zip`
+- **Windows x86_65:** `curl.exe -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/tag/v1.0.0/cw_setup_win_x86_64.zip; Expand-Archive -Path setup.zip -DestinationPath .; Remove-Item setup.zip`
+- **Linux x86_64:** `curl -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/tag/v1.0.0/cw_setup_linux_x86_64.zip && unzip setup.zip && rm setup.zip`
+- **MacOS ARM:** `curl -L -o setup.zip https://github.com/StrijpT-Ellie/contour-wall/releases/download/tag/v1.0.0/cw_setup_macos_arm.zip && unzip setup.zip && rm setup.zip`
 - Sadly we do not have a pre-compiled setup for you, [you have to compile it yourself](#compiling-your-own-setup).
 
 Documentation of the wrappers are included in the actual source code above each function. Refer to demos for more context.
