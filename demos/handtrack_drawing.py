@@ -1,6 +1,17 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+import sys
+import os
+
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "../lib/wrappers/python"))
+)
+
+from contourwall_emulator import ContourWallEmulator, hsv_to_rgb
+
+# Also changed from `ContourWall` to `ContourWallEmulator`
+cw = ContourWallEmulator()
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -14,7 +25,7 @@ hands = mp_hands.Hands(
 )
 
 # Open webcam
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -49,3 +60,5 @@ while cap.isOpened():
 
 cap.release()
 cv2.destroyAllWindows()
+
+cw.show()
