@@ -1,4 +1,5 @@
-from contourwall import ContourWall
+# from contourwall import ContourWall
+from contourwall_emulator import ContourWallEmulator, hsv_to_rgb
 
 import cv2
 import mediapipe as mp
