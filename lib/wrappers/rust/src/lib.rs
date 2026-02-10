@@ -180,7 +180,7 @@ fn check_comport_existence(com_ports: Vec<&String>) -> bool {
         .into_iter()
         .map(|port| port.port_name)
         .collect::<Vec<String>>();
-    println!("{:?}", ports);
+
     for port in com_ports {
         if !ports.contains(&port) {
             return false;

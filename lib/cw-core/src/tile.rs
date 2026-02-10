@@ -46,7 +46,7 @@ impl Tile {
     /// ```
     pub fn init(port: String, baudrate: u32) -> Result<Tile, InitError> {
         let Ok(port) = serialport::new(&port, baudrate)
-            .timeout(Duration::from_millis(25))
+            .timeout(Duration::from_millis(100))
             .stop_bits(serialport::StopBits::One)
             .parity(serialport::Parity::None)
             .open()
@@ -62,18 +62,39 @@ impl Tile {
             previous_framebuffer: [0u8; 1200],
         };
 
-        let magic_numbers = tile.command_6_magic_numbers()[0..5]
-            .into_iter()
-            .map(|&x| x as char)
-            .collect::<String>();
+        // The next sections is going to repeatably ask the tiles for its magic numbers
+        // Making a connection to a serial port can take quite long, so emmidiatly asking for magic numbers can fail
+        // Therefore, it tries 20 times with a 100ms interval to wait for the connection to be successfull
+        // If still no connection, or wrong magic numbers, the serial connection is faulty and an error is retuned
 
-        if magic_numbers != "Ellie" {
-            Result::Err(InitError::NotAnEllieTile)
-        } else {
-            Result::Ok(tile)
+        let tries = 20;     // # of times it is going to ask the magic numbers fom the tile
+        let interval = 100; // Time in ms in between the tries
+        let mut connected = false; // Flag is connection is made
+
+        for _ in 0..tries {
+            // Clear buffer before every attempt to ensure we don't read old garbage
+            let _ = tile.port.clear(serialport::ClearBuffer::Input);
+
+            let magic_numbers = tile.command_6_magic_numbers()[0..5]
+                .into_iter()
+                .map(|&x| x as char)
+                .collect::<String>();
+
+            if magic_numbers == "Ellie" {
+                connected = true;
+                break;
+            }
+
+            std::thread::sleep(Duration::from_millis(interval));
         }
 
-        // Ok(tile)
+        if connected {
+            // 25ms is good for high framerate communication with tile
+            let _ = tile.port.set_timeout(Duration::from_millis(25));
+            Result::Ok(tile)
+        } else {
+           Result::Err(InitError::NotAnEllieTile)
+        }
     }
 
     /// Executes `command_0_show` of the protocol.
@@ -354,7 +375,7 @@ impl Tile {
         if self.read_from_serial(read_buf).is_err() {
             return (StatusCode::ErrorInternal, 0);
         }
-        println!("{:?}", read_buf);
+
         if StatusCode::new(read_buf[2]).is_none() {
             (StatusCode::ErrorInternal, 0)
         } else {

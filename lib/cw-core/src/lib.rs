@@ -105,6 +105,7 @@ pub struct ContourWallCore {
 /// The initialized ContourWall is returned.
 #[no_mangle]
 pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
+    configure_logging();
     fn error_handler(e: Error) -> Vec<SerialPortInfo> {
         error!("{}", e);
         Vec::new()
@@ -133,39 +134,37 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
                 tile
             },
             Err(error) => {
-                println!(
+                info!(
                     "'{}', is not an ELLIE tile, because: {:?}",
                     port.port_name, error
                 );
                 continue;
             }
         };
-        println!("{:?}", port);
+
         let (status_code, identifier) = tile.command_4_get_tile_identifier();
-        if status_code == StatusCode::Ok {
-            println!("Identifier: {}", identifier);
-            tiles[identifier as usize - 1] = Some(tile);
-        } else {
-            println!("awdadwdaw");
-        }
+
+        if status_code != StatusCode::Ok {
+            error!("[CW CORE ERROR] Could not get identifer from ELLIE tile with COMport {}", port.port_name.clone());
+            std::process::exit(1);
+        } 
+        tiles[identifier as usize - 1] = Some(tile);
+        info!("[CW CORE INFO] COMport({}) ID: {}", port.port_name, identifier);
     }
 
     let mut tiles: Vec<Tile> = tiles.into_iter().flat_map(|tile| tile).collect();
-    println!("{}", tiles.len());
-    // TODO: Implement actual error that does not crash the program
-    assert_eq!(
-        tiles.len(),
-        6,
-        "[CW CORE ERROR] Only {}/6 tiles were found",
-        tiles.len()
-    );
+
+    if tiles.len() != 6 {
+        error!("[CW CORE ERROR] Only {}/6 tiles were found", tiles.len());
+        std::process::exit(1);
+    }
 
     let tiles_ptr = tiles.as_mut_ptr();
     let tiles_len = tiles.len();
-    configure_logging();
+   
     if !configure_threadpool(tiles_len as u8) {
         warn!(
-            "Failed to configure the threadpool with {} thread",
+            "[CW CORE WARNING] Failed to configure the threadpool with {} threads",
             tiles_len
         )
     }
@@ -201,6 +200,7 @@ pub extern "C" fn new_with_ports(
     com_port5: *const c_char,
     baud_rate: u32,
 ) -> ContourWallCore {
+    configure_logging();
     let com_ports = vec![
         util::str_ptr_to_string(com_port0),
         util::str_ptr_to_string(com_port1),
@@ -223,7 +223,7 @@ pub extern "C" fn new_with_ports(
         let tile = match tile {
             Ok(tile) => tile,
             Err(error) => {
-                println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
+                error!("[CW CORE ERROR] '{}', is not an ELLIE tile, because: {:?}", com_port, error);
                 continue;
             }
         };
@@ -234,10 +234,10 @@ pub extern "C" fn new_with_ports(
 
     let tiles_ptr = tiles.as_mut_ptr();
     let tiles_len = tiles.len();
-    configure_logging();
+
     if !configure_threadpool(tiles_len as u8) {
         warn!(
-            "Failed to configure the threadpool with {} thread",
+            "[CW CORE WARNING] Failed to configure the threadpool with {} thread",
             tiles_len
         )
     }
@@ -260,25 +260,27 @@ pub extern "C" fn new_with_ports(
 /// The initialized ContourWall is returned.
 #[no_mangle]
 pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) -> ContourWallCore {
+    configure_logging();
     let com_port = util::str_ptr_to_string(com_port);
     let tile = Tile::init(com_port.clone(), baud_rate);
     let tile = match tile {
         Ok(tile) => tile,
         Err(error) => {
-            println!("'{}', is not an ELLIE tile, because: {:?}", com_port, error);
-            todo!();
+            error!("[CW CORE ERROR] '{}', is not an ELLIE tile, because: {:?}", com_port, error);
+            std::process::exit(1);
         }
     };
 
     let mut tiles = vec![tile];
     let tiles_ptr = tiles.as_mut_ptr();
     let tiles_len = tiles.len();
-    configure_logging();
+
     if !configure_threadpool(tiles_len as u8) {
         error!(
-            "Failed to configure the threadpool with {} thread",
+            "[CW CORE ERROR] Failed to configure the threadpool with {} thread",
             tiles_len
         )
+        std::process::exit(1);
     }
 
     std::mem::forget(tiles);
