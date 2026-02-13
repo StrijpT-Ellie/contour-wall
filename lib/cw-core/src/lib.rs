@@ -143,9 +143,9 @@ pub extern "C" fn new(baud_rate: u32) -> ContourWallCore {
         };
 
         let (status_code, identifier) = tile.command_4_get_tile_identifier();
-
+        
         if status_code != StatusCode::Ok {
-            error!("[CW CORE ERROR] Could not get identifer from ELLIE tile with COMport {}", port.port_name.clone());
+            error!("[CW CORE ERROR] Could not get identifer from ELLIE tile from COMport({}) - Errorcode: {}", port.port_name.clone(), status_code);
             std::process::exit(1);
         } 
         tiles[identifier as usize - 1] = Some(tile);
@@ -279,7 +279,7 @@ pub extern "C" fn single_new_with_port(com_port: *const c_char, baud_rate: u32) 
         error!(
             "[CW CORE ERROR] Failed to configure the threadpool with {} thread",
             tiles_len
-        )
+        );
         std::process::exit(1);
     }
 

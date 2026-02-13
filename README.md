@@ -4,21 +4,10 @@ This project is a student initiative called "The Contour Wall," which is part of
 
 The Contour Wall is intended to be an abstract, colorful, large-scale display measuring two meters in height and three meters in width. The project aims to serve as a visually striking and inspirational focal point, highlighting the diverse talents and capabilities of Fontys ICT students. By integrating elements from multiple ICT domains, the project provides a hands-on learning experience for the participating students, fostering collaboration, problem-solving, and skill development. And because of its simple and open interface, future students can integrate The Contour Wall into their project.
 
-## What’s in this repository
-
-This repository contains **all research, designs, source code, and documentation** related to the Contour Wall:
-
-- Software (core library + wrappers)
-- Firmware for the tiles
-- Hardware and PCB designs
-- Research experiments
-- Example demos
-- Architecture documentation
-
 ![ellie_tq_render](/img/ellie_tq_denoise.png)
+![ellie_irl](/img/ellie_irl.png)
 
----
-## Creating a demo
+## How to use
 
 The Contour Wall can display a wide variety of interactive demos, such as:
 - Visual animations
@@ -39,23 +28,35 @@ To create a demo in Python3, download and unzip a setup example for your archite
 
 Documentation of the wrappers are included in the actual source code above each function. Refer to demos for more context.
 
-### Compiling your own setup
+### Compiling your own setup (not recommended)
+
 Before creating your own demo, you must:
-1. **Compile the core library** (written in Rust): [lib/cw-core](lib/cw-core/)
+1. **Compile the core library** : [lib/cw-core](lib/cw-core/)
 2. **Choose and set up a wrapper language** (Python or Rust): [lib/wrappers](lib/wrappers/)
-3. **Connect to the Contour Wall or use the emulator**
-   - Emulator: : [lib/wrappers/python/contourwall_emulator.py](lib/wrappers/contourwall_emulator.py)
+
+Or you can use the python ContourWall emulator if you do not have an actual wall: [lib/wrappers/python/contourwall_emulator.py](lib/wrappers/contourwall_emulator.py)
 
 Once your environment is ready, you can:
 - Run existing demos from `/demos`
 - Modify a demo
 - Create your own interactive experience
 
-**Start here**:
+To find the precise guides for different platforms, **Start here**:
 - [Getting started: Compile the core library](lib/README.md )
 - [Getting started: Learning how the Contour wall works](docs/getting_started.md)
 
----
+
+## What it in this repository
+
+This repository contains **all research, designs, source code, and documentation** related to the Contour Wall:
+
+- Software (core library + wrappers)
+- Firmware for the tiles
+- Hardware and PCB designs
+- Research experiments
+- Example demos
+- Architecture documentation
+
 ## Documentation readers guide
 
 - [You want to use the Contour Wall for your project](docs/getting_started.md)

@@ -54,27 +54,27 @@ def test_fade_colors():
 def test_moving_lines():
     for _ in range(2):
         # Move white line over the horizontal axis, from left to right
-        for i in range(20):
+        for i in range(40):
             cw.pixels[i:i+1] = 255, 255, 255
             cw.show()
             cw.pixels[i:i+1] = 0, 0, 0
  
         # Move white line over the horizontal axis, from right to left
-        for j in range(20):
-            i = 19 - j
+        for j in range(40):
+            i = 39 - j
             cw.pixels[i:i+1] = 255, 255, 255
             cw.show()
             cw.pixels[i:i+1] = 0, 0, 0
     for _ in range(2):
         # Move white line over the vertical axis, from top to bottom
-        for i in range(20):
+        for i in range(60):
             cw.pixels[: ,i] = 255, 255, 255
             cw.show()
             cw.pixels[: ,i] = 0, 0, 0   
 
         # Move white line over the vertical axis, from bottom to top
-        for j in range(20):
-            i = 19 - j
+        for j in range(60):
+            i = 59 - j
             cw.pixels[: ,i] = 255, 255, 255
             cw.show()
             cw.pixels[: ,i] = 0, 0, 0
@@ -87,10 +87,10 @@ def test_turning_pixels_on_zigzag():
     color = 255, 255, 255
     for _ in range(2): 
         left_to_right = True
-        for x in range(0, 20, 2):
-            for y in range(0, 20, 2):
+        for x in range(0, 40, 2):
+            for y in range(0, 60, 2):
                 if not left_to_right:
-                    y = 18-y
+                    y = 58-y
                 cw.pixels[x:x+2, y:y+2] = color
                 cw.show()
             left_to_right = not left_to_right 
@@ -98,14 +98,9 @@ def test_turning_pixels_on_zigzag():
 
 if __name__ == "__main__":
     global cw 
-    # Example for Windows
-    # cw = ContourWall("COM0", baud_rate=2_000_000)
-    # Example for Unix
-    # cw = ContourWall("/dev/ttyUSB0", baud_rate=2_000_000)
     
-    cw = ContourWall("/dev/tty.usbmodem564D0089331")    #cw = ContourWall("/dev/tty.usbmodem564D0089331", baud_rate=2_000_000)
-
-    cw.single_new_with_port("COM3")
+    cw = ContourWall() 
+    cw.new()
 
     args = sys.argv[1:]
 

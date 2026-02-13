@@ -44,7 +44,7 @@ class ContourWallEmulator:
 
         cv.imshow('Contour Wall Emulator', self.__matrix)
         cv.waitKey(1)
-        
+        time.sleep(0.01)
         if sleep_ms > 0:
             time.sleep(sleep_ms / 1000)
     

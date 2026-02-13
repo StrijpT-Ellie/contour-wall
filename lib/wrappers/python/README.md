@@ -1,8 +1,8 @@
 # Python Contour Wall Wrapper 
 
-If you have not yet compiled the core library, you find a setup script in the README in the root of the repository. Or start here first by compiling it yourself:
+If you have not yet compiled the core library and setup the project it is recommended you use the setup script in the root of the repository. If you want to compile and do the setup yourself, follow the guide below:
 
--  **[Setup Guide - Compile the core library](../lib/wrappers/README.md)**
+-  **[Manual Setup Guide - Compile the core library](../../README.md)**
 
 ## How to run a demo
 
@@ -20,7 +20,7 @@ Create a new file and use the import 'from contourwall import ContourWall, hsv_t
 To utilize this library, ensure you have the necessary serial port permissions and ESP32 firmware flashed with the ContourWall protocol support.
 
 ``` Python
-from contourwall import ContourWall, hsv_to_rgb
+from contourwall import ContourWall
 
 cw = ContourWall()
 cw.new()
@@ -78,12 +78,3 @@ Now every frame you send will appear in a window on your computer using OpenCV.
 ## Running MyPy typechecker
 To check types in the wrapper:
 - `python3 -m mypy contourwall.py --disallow-untyped-defs --allow-redefinition`
-
-
-
-
-
-
-
-
-
