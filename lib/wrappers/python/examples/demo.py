@@ -1,6 +1,14 @@
-from contourwall import ContourWall, hsv_to_rgb
-import time
 import sys
+import time
+from pathlib import Path
+
+_THIS_DIR = Path(__file__).resolve().parent
+WRAPPER_DIR = _THIS_DIR.parent
+
+if str(WRAPPER_DIR) not in sys.path:
+    sys.path.insert(0, str(WRAPPER_DIR))
+
+from contourwall import ContourWall, hsv_to_rgb
 
 def test_flash_all_colors():
     # Set all pixels to RED

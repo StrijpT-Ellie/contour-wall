@@ -5,4 +5,5 @@
 # Language things
 __pycache__/
 target/
-venv/
+.venv/
+node_modules
